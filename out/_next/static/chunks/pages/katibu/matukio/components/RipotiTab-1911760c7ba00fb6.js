@@ -1,0 +1,1 @@
+(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[8447],{16616:(_,n,u)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/katibu/matukio/components/RipotiTab",function(){return u(92641)}])}},_=>{var n=n=>_(_.s=n);_.O(0,[3656,1544,2641,636,6593,8792],()=>n(16616)),_N_E=_.O()}]);
