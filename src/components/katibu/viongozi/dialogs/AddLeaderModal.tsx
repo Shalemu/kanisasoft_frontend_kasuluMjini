@@ -15,19 +15,24 @@ export interface Role {
 }
 
 export interface Member {
-  id: number;          // ✅ THIS IS user_id
+  id: number;
   full_name: string;
   email: string | null;
   phone: string | null;
+}
+
+/** Pivot assignments from API */
+export interface RoleAssignment {
+  user_id: number;
+  role_id: number;
 }
 
 interface AddLeaderModalProps {
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
   roles: Role[];
-  members: Member[];                     // list of USERS
-  currentLeaders: { user_id: number }[]; // existing leaders
-  selectedMember?: Member | null;        // preselected user
+  members: Member[];
+  selectedMember?: Member | null;
   onLeaderAdded: () => Promise<void>;
 }
 
@@ -40,13 +45,27 @@ export default function AddLeaderModal({
   setIsOpen,
   roles,
   members,
-  currentLeaders,
   selectedMember,
   onLeaderAdded,
 }: AddLeaderModalProps) {
   const [selectedRoleId, setSelectedRoleId] = useState<number | ''>('');
   const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
   const [loading, setLoading] = useState(false);
+  const [assignments, setAssignments] = useState<RoleAssignment[]>([]);
+
+  /* ======================
+     Fetch assignments from API
+  ====================== */
+  const fetchAssignments = async () => {
+    try {
+      const res = await apiFetch('/user-role-assignments');
+      if (res.status === 'success') {
+        setAssignments(res.assignments);
+      }
+    } catch (error) {
+      console.error('Failed to fetch role assignments', error);
+    }
+  };
 
   /* ======================
      Reset state on open/close
@@ -54,9 +73,11 @@ export default function AddLeaderModal({
   useEffect(() => {
     if (isOpen) {
       setSelectedUserId(selectedMember?.id ?? '');
-    } else {
       setSelectedRoleId('');
+      fetchAssignments();
+    } else {
       setSelectedUserId('');
+      setSelectedRoleId('');
     }
   }, [isOpen, selectedMember]);
 
@@ -66,34 +87,34 @@ export default function AddLeaderModal({
      Submit
   ====================== */
   const handleAdd = async () => {
-    if (!selectedRoleId) {
-      alert('⚠️ Tafadhali chagua nafasi.');
+    if (!selectedUserId || !selectedRoleId) {
+      alert('⚠️ Tafadhali chagua mshirika na nafasi.');
       return;
     }
 
-    if (
-      selectedUserId &&
-      currentLeaders.some(l => l.user_id === selectedUserId)
-    ) {
-      alert('⚠️ Mshirika huyu tayari ameteuliwa kuwa kiongozi.');
+    // Prevent assigning the same role twice
+    const alreadyHasRole = assignments.some(
+      a => a.user_id === selectedUserId && a.role_id === selectedRoleId
+    );
+
+    if (alreadyHasRole) {
+      alert('⚠️ Mshirika huyu tayari ana nafasi hii.');
       return;
     }
-
-    const payload = {
-      role_id: Number(selectedRoleId),
-      user_id: Number(selectedUserId),
-    };
 
     try {
       setLoading(true);
 
-      const res = await apiFetch('/leaders', {
+      const res = await apiFetch('/users/assign-roles', {
         method: 'POST',
-        body: payload,
+        body: {
+          user_id: Number(selectedUserId),
+          roles: [Number(selectedRoleId)],
+        },
       });
 
       if (res.status === 'error') {
-        alert(res.message || 'Imeshindikana kuongeza kiongozi.');
+        alert(res.message || 'Imeshindikana kuongeza nafasi.');
         return;
       }
 
@@ -111,7 +132,6 @@ export default function AddLeaderModal({
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={closeModal}>
         <div className="fixed inset-0 bg-black/30" />
-
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-md bg-white rounded-lg p-6">
             <Dialog.Title className="text-lg font-bold mb-4">
@@ -134,26 +154,18 @@ export default function AddLeaderModal({
               <select
                 className="w-full border rounded px-3 py-2 mb-4"
                 value={selectedUserId}
-                onChange={(e) => setSelectedUserId(Number(e.target.value))}
+                onChange={(e) =>
+                  setSelectedUserId(
+                    e.target.value ? Number(e.target.value) : ''
+                  )
+                }
               >
                 <option value="">-- Chagua mshirika --</option>
-
-                {members.map((m) => {
-                  const alreadyLeader = currentLeaders.some(
-                    l => l.user_id === m.id
-                  );
-
-                  return (
-                    <option
-                      key={m.id}
-                      value={m.id}
-                      disabled={alreadyLeader}
-                    >
-                      {m.full_name}
-                      {alreadyLeader ? ' (Tayari kiongozi)' : ''}
-                    </option>
-                  );
-                })}
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.full_name}
+                  </option>
+                ))}
               </select>
             )}
 
@@ -161,7 +173,11 @@ export default function AddLeaderModal({
             <select
               className="w-full border rounded px-3 py-2 mb-6"
               value={selectedRoleId}
-              onChange={(e) => setSelectedRoleId(Number(e.target.value))}
+              onChange={(e) =>
+                setSelectedRoleId(
+                  e.target.value ? Number(e.target.value) : ''
+                )
+              }
             >
               <option value="">-- Chagua nafasi --</option>
               {roles.map((role) => (

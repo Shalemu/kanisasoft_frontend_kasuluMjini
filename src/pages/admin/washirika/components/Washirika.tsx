@@ -87,7 +87,7 @@ useEffect(() => {
 
   if (data?.users) {
     const users = data.users.map((u: any) => ({
-      // 🔑 PRIMARY ID FOR UI & ACTIONS (ALWAYS USER ID)
+      //  PRIMARY ID FOR UI & ACTIONS (ALWAYS USER ID)
       id: u.id,                 // ✅ user_id only
       user_id: u.id,            // (optional but explicit)
       member_id: u.member_id ?? null,
@@ -464,16 +464,19 @@ const handleAddLeader = () => {
     isOpen={isLeaderModalOpen}
     setIsOpen={setIsLeaderModalOpen}
     roles={roles}
-    members={members}             // <-- pass the full list of members
-    currentLeaders={leaders}      // <-- pass current leaders so modal can check assigned users
+    members={members}               // full list of members
     selectedMember={selectedMemberForLeader}
     onLeaderAdded={async () => {
       alert(`${selectedMemberForLeader.full_name} ameongezwa kama kiongozi!`);
+
+      // no need to refresh assignments manually; modal handles it internally
       setIsLeaderModalOpen(false);
       setSelectedMemberForLeader(null);
     }}
   />
 )}
+
+
 
 
 

@@ -20,7 +20,8 @@ interface Leader {
   name: string;
   email: string;
   phone: string;
-  role: string;
+  role: string;       
+  roles: string[]; 
   user_id: number | null;
 }
 
@@ -33,6 +34,12 @@ export default function OrodhaYaViongozi() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [showRolesTable, setShowRolesTable] = useState(false);
+  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
+  const [editRole, setEditRole] = useState<Role | null>(null);
+
+
 
   // Fetch roles and leaders on mount
   useEffect(() => {
@@ -46,12 +53,37 @@ export default function OrodhaYaViongozi() {
       const normalized: Role[] = (res.roles || []).map((r: any) => ({
         id: r.id,
         title: r.title,
-        requiresMember: r.requires_member,
+       requires_member: false, 
         protected: r.protected,
       }));
       setRoles(normalized);
     }
   };
+
+
+  const toggleRoleSelect = (id: number) => {
+  setSelectedRoleIds((prev) =>
+    prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+  );
+};
+
+const toggleSelectAllRoles = () => {
+  const allIds = roles.map((r) => r.id);
+  setSelectedRoleIds(
+    selectedRoleIds.length === roles.length ? [] : allIds
+  );
+};
+
+const deleteSelectedRoles = async () => {
+  if (!confirm('Una uhakika unataka kufuta nafasi zilizochaguliwa?')) return;
+
+  for (const id of selectedRoleIds) {
+    await apiFetch(`/leadership-roles/${id}`, { method: 'DELETE' });
+  }
+
+  await fetchRoles();
+  setSelectedRoleIds([]);
+};
 
   const fetchLeaders = async () => {
     const res = await apiFetch('/leaders');
@@ -60,14 +92,16 @@ export default function OrodhaYaViongozi() {
 
       // Prioritize special roles
       const priorityOrder = ['mchungaji', 'katibu', 'mtunza hazina', 'admin'];
-      const sorted = activeOnly.sort((a: Leader, b: Leader) => {
-        const aPriority = priorityOrder.indexOf(a.role.toLowerCase());
-        const bPriority = priorityOrder.indexOf(b.role.toLowerCase());
-        if (aPriority === -1 && bPriority === -1) return a.name.localeCompare(b.name);
-        if (aPriority === -1) return 1;
-        if (bPriority === -1) return -1;
-        return aPriority - bPriority;
-      });
+   const sorted = activeOnly.sort((a: Leader, b: Leader) => {
+  const aPriority = priorityOrder.indexOf(a.role?.toLowerCase() ?? '');
+  const bPriority = priorityOrder.indexOf(b.role?.toLowerCase() ?? '');
+
+  if (aPriority === -1 && bPriority === -1) return a.name.localeCompare(b.name);
+  if (aPriority === -1) return 1;
+  if (bPriority === -1) return -1;
+  return aPriority - bPriority;
+});
+
       setLeaders(sorted);
     }
   };
@@ -194,6 +228,14 @@ export default function OrodhaYaViongozi() {
           >
             <FaPlus /> Nafasi
           </button>
+       <button
+        onClick={() => setShowRolesTable((prev) => !prev)}
+        className="bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2"
+      >
+        <FaSearch /> Nafasi zilizopo
+      </button>
+
+
         </div>
       </div>
 
@@ -267,57 +309,171 @@ export default function OrodhaYaViongozi() {
             </tr>
           </thead>
           <tbody>
-            {filteredLeaders.length > 0 ? (
-              filteredLeaders.map((l) => (
-                <tr
-                  key={l.id}
-                  className={`${
-                    selectedIds.includes(l.id) ? 'bg-blue-50' : ''
-                  } odd:bg-white even:bg-gray-50 text-gray-800 cursor-pointer hover:bg-gray-100`}
-                  onClick={() => {
-                    if (l.user_id) setSelectedMemberId(l.user_id);
-                  }}
-                  style={{ transition: 'background 0.15s' }}
+  {filteredLeaders.length > 0 ? (
+    filteredLeaders.map((l) => (
+      <tr
+        key={l.id}
+        className={`${
+          selectedIds.includes(l.id) ? 'bg-blue-50' : ''
+        } odd:bg-white even:bg-gray-50 text-gray-800 cursor-pointer hover:bg-gray-100`}
+        onClick={() => {
+          if (l.user_id) setSelectedMemberId(l.user_id);
+        }}
+        style={{ transition: 'background 0.15s' }}
+      >
+        {/* Checkbox */}
+        <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={selectedIds.includes(l.id)}
+            onChange={() => toggleSelect(l.id)}
+          />
+        </td>
+
+        {/* Name & Email */}
+        <td className="px-4 py-2 font-medium text-gray-800">
+          <div>
+            <div>{l.name}</div>
+            <div className="text-gray-500 text-xs">{l.email}</div>
+          </div>
+        </td>
+
+        {/* Phone */}
+        <td className="px-4 py-2">{l.phone}</td>
+
+        {/* Roles / Positions */}
+        <td className="px-4 py-2">
+          <div className="flex flex-wrap gap-1">
+            {l.roles && l.roles.length > 0 ? (
+              l.roles.map((roleTitle, idx) => (
+                <span
+                  key={idx}
+                  className="font-semibold px-2 py-1 rounded-full text-xs bg-green-100 text-green-700"
                 >
-                  <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(l.id)}
-                      onChange={() => toggleSelect(l.id)}
-                    />
-                  </td>
-                  <td className="px-4 py-2 font-medium text-gray-800">
-                    <div>
-                      <div>{l.name}</div>
-                      <div className="text-gray-500 text-xs">{l.email}</div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">{l.phone}</td>
-                  <td className="px-4 py-2">
-                    <span className="font-semibold px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                      {l.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => setEditId(l.id)}
-                      className="bg-yellow-500 text-white rounded p-1.5 hover:bg-yellow-600"
-                      title="Hariri"
-                    >
-                      <FaEdit />
-                    </button>
-                  </td>
-                </tr>
+                  {roleTitle}
+                </span>
               ))
             ) : (
-              <tr>
-                <td colSpan={5} className="text-center py-6 text-gray-500">
-                  Hakuna viongozi waliopo kwa sasa.
-                </td>
-              </tr>
+              <span className="text-gray-400 text-xs">Hakuna Nafasi</span>
             )}
-          </tbody>
+          </div>
+        </td>
+
+        {/* Actions */}
+        <td className="px-4 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setEditId(l.id)}
+            className="bg-yellow-500 text-white rounded p-1.5 hover:bg-yellow-600"
+            title="Hariri"
+          >
+            <FaEdit />
+          </button>
+        </td>
+      </tr>
+    ))
+  ) : (
+    <tr>
+      <td colSpan={5} className="text-center py-6 text-gray-500">
+        Hakuna viongozi waliopo kwa sasa.
+      </td>
+    </tr>
+  )}
+</tbody>
+
         </table>
+
+        {editRole && (
+  <AddRoleModal
+    isOpen={true}
+    role={editRole}
+    onClose={() => setEditRole(null)}
+    onSaved={() => {
+      fetchRoles();
+      setEditRole(null);
+    }}
+  />
+)}
+
+
+{showRolesTable && (
+  <div className="mt-8 bg-white border rounded shadow">
+
+    {/* Header */}
+    <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+      <h2 className="font-semibold text-gray-800">
+        Nafasi Zilizopo
+      </h2>
+
+      {selectedRoleIds.length > 0 && (
+        <button
+          onClick={deleteSelectedRoles}
+          className="bg-red-600 text-white px-3 py-1 rounded text-sm"
+        >
+          Futa ({selectedRoleIds.length})
+        </button>
+      )}
+    </div>
+
+    {/* Table */}
+    <table className="min-w-full text-sm">
+ <thead className="bg-gray-100 text-gray-600">
+  <tr>
+    <th className="px-4 py-2">
+      {/* <input
+        type="checkbox"
+        checked={selectedRoleIds.length === roles.length}
+        onChange={toggleSelectAllRoles}
+      /> */}
+    </th>
+    <th className="px-4 py-2">Nafasi</th>
+    <th className="px-4 py-2 text-center">Hatua</th>
+  </tr>
+</thead>
+
+
+      <tbody>
+  {roles.map((role) => (
+    <tr key={role.id} className="hover:bg-gray-50">
+      {/* Checkbox */}
+      <td className="px-4 py-2">
+        <input
+          type="checkbox"
+          checked={selectedRoleIds.includes(role.id)}
+          onChange={() => toggleRoleSelect(role.id)}
+        />
+      </td>
+
+      {/* Nafasi */}
+      <td className="px-4 py-2 font-medium">
+        {role.title}
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-2 text-center">
+        <button
+          onClick={() => setEditRole(role)}
+          className="bg-yellow-500 text-white p-1.5 rounded hover:bg-yellow-600"
+        >
+          <FaEdit />
+        </button>
+      </td>
+    </tr>
+  ))}
+
+  {roles.length === 0 && (
+    <tr>
+      <td colSpan={3} className="text-center py-4 text-gray-500">
+        Hakuna nafasi
+      </td>
+    </tr>
+  )}
+</tbody>
+
+    </table>
+  </div>
+)}
+
+
       </div>
 
       {/* Edit Leader Modal */}
@@ -386,13 +542,27 @@ export default function OrodhaYaViongozi() {
       )}
 
       {/* Add Role Modal */}
-      <AddRoleModal
-        isOpen={isRoleModalOpen}
-        setIsOpen={setIsRoleModalOpen}
-        roles={roles}
-        setRoles={setRoles}
-        onRoleAdded={fetchRoles}
-      />
+{/* Add new role */}
+<AddRoleModal
+  isOpen={isRoleModalOpen}
+  onClose={() => setIsRoleModalOpen(false)}
+  onSaved={fetchRoles}
+/>
+
+{/* Edit existing role */}
+<AddRoleModal
+  isOpen={!!editRole}
+  role={editRole}
+  onClose={() => setEditRole(null)}
+  onSaved={() => {
+    fetchRoles();
+    setEditRole(null);
+  }}
+/>
+
+
+
+
     </div>
   );
 }
