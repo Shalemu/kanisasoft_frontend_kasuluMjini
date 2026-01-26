@@ -11,6 +11,7 @@ interface Member {
   full_name: string;
   phone_number?: string;
   gender?: string;
+   membership_number: string;
 }
 
 export default function GroupMembers({ groupId, onBack }: { groupId: number; onBack: () => void }) {
@@ -116,22 +117,36 @@ export default function GroupMembers({ groupId, onBack }: { groupId: number; onB
     }
   };
 
-  const removeMembers = async () => {
-    if (selectedMemberIds.length === 0) return alert('Chagua washirika wa kuondoa.');
-    if (!confirm('Una uhakika unataka kuwaondoa hawa washirika?')) return;
-    for (const memberId of selectedMemberIds) {
-      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/groups/${groupId}/remove-member`, {
+ const removeMembers = async () => {
+  if (selectedMemberIds.length === 0) {
+    alert('Chagua washirika wa kuondoa.');
+    return;
+  }
+
+  if (!confirm('Una uhakika unataka kuwaondoa hawa washirika?')) return;
+
+  for (const memberId of selectedMemberIds) {
+    const member = members.find(m => m.id === memberId);
+    if (!member?.membership_number) continue;
+
+    await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/groups/${groupId}/remove-member`,
+      {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify({ member_id: memberId }),
-      });
-    }
-    setMembers((prev) => prev.filter((m) => !selectedMemberIds.includes(m.id)));
-    setSelectedMemberIds([]);
-  };
+        body: JSON.stringify({
+          membership_number: member.membership_number, // ✅ FIX
+        }),
+      }
+    );
+  }
+
+  setMembers(prev => prev.filter(m => !selectedMemberIds.includes(m.id)));
+  setSelectedMemberIds([]);
+};
 
   return (
     <div className="bg-white p-6 rounded shadow border border-gray-200">

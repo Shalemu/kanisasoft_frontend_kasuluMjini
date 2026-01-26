@@ -170,56 +170,29 @@ const fetchRoles = async () => {
   };
 
   const handleExportExcel = () => {
-    const exportData = members.map((m, i) => ({
-      '#': i + 1,
-     'Jina Kamili': m.full_name,
-     'Namba ya Mshirika': m.membership_number || '—',
-      'Namba ya Simu': m.phone,
-      // Nafasi: m.role || '—',
-      Makundi: m.groups?.map(g => g.name).join(', ') || '—',
-      'Barua Pepe': m.email || '—',
-      'Jinsia': m.gender || '—',
-      'Tarehe ya Kuzaliwa': m.birth_date || '—',
-      'Mahali pa Kuzaliwa': m.birth_place || '—',
-   
-      'Hali ya Ushirika':
-        m.membership_status === 'inactive'
-          ? 'Ameondolewa'
-          : 'Hai',
-      // 'Sababu ya Kuondolewa': m.deactivation_reason || '—',
-      'Tarehe ya Kusajiliwa': m.created_at
-        ? m.created_at.split('T')[0]
-        : '—',
-    }));
+  const exportData = members.map((m, i) => ({
+    '#': i + 1,
+    'Jina Kamili': m.full_name || '—',
+    'Namba ya Ushirika': m.membership_number || '—',
+    'Namba ya Simu': m.phone || '—',
+    'Zone': m.residential_zone || '—',
+  }));
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Washirika');
-    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([buffer], { type: 'application/octet-stream' });
-    saveAs(blob, 'washirika.xlsx');
-  };
+  const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Washirika');
 
-  const formatDate = (dateStr: string | null | undefined) => {
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-GB'); // DD/MM/YYYY
+  const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
+  saveAs(blob, 'washirika.xlsx');
 };
 
-  const handleExportPdf = () => {
+ const handleExportPdf = () => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
     format: 'a4',
   });
-
-  // Helper to format dates
-const formatDate = (dateStr: string | null | undefined) => {
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('en-GB'); // DD/MM/YYYY
-};
-
 
   // Prepare table data
   const tableData = members
@@ -233,65 +206,43 @@ const formatDate = (dateStr: string | null | undefined) => {
       m.full_name || '—',
       m.membership_number || '—',
       m.phone || '—',
-      m.email || '—',
-      m.gender || '—',
-      formatDate(m.birth_date),
-      m.birth_place || '—',
-      // m.role || '—',
-      m.membership_status === 'inactive' ? 'Ameondolewa' : 'Hai',
-      m.groups && m.groups.length > 0
-        ? m.groups.map((g) => g.name).join(', ')
-        : '—',
-      formatDate(m.created_at),
+      m.residential_zone || '—',
     ]);
 
-  // Set title
+  // Title
   doc.setFontSize(14);
   doc.text('ORODHA YA WASHIRIKA', 14, 14);
 
-  // Generate table
+  // Table
   autoTable(doc, {
     startY: 20,
     head: [[
       '#',
       'Jina Kamili',
-      'Namba ya Mshirika',
-      'Simu',
-      'Barua Pepe',
-      'Jinsia',
-      'Tarehe ya Kuzaliwa',
-      'Mahali pa Kuzaliwa',
-      // 'Nafasi',
-      'Hali ya Ushirika',
-      'Makundi',
-      'Tarehe ya Kusajiliwa',
+      'Namba ya Ushirika',
+      'Namba ya Simu',
+      'Zone',
     ]],
     body: tableData,
     styles: {
-      fontSize: 8,
-      cellPadding: 2,
-      overflow: 'linebreak', // wrap text instead of cutting
+      fontSize: 9,
+      cellPadding: 3,
+      overflow: 'linebreak',
     },
     headStyles: {
       fillColor: [22, 163, 74], // green
       textColor: 255,
       halign: 'center',
     },
-    bodyStyles: { valign: 'middle' },
+    bodyStyles: {
+      valign: 'middle',
+    },
     columnStyles: {
-      0: { cellWidth: 8 },
-      1: { cellWidth: 30 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 25 },
-      4: { cellWidth: 40 },
-      5: { cellWidth: 18 },
-      6: { cellWidth: 25 },
-      7: { cellWidth: 30 },
-      8: { cellWidth: 20 },
-      9: { cellWidth: 20 },
-      10: { cellWidth: 28 },
-      11: { cellWidth: 40 },
-      12: { cellWidth: 25 },
+      0: { cellWidth: 10 },  // #
+      1: { cellWidth: 60 },  // Jina
+      2: { cellWidth: 40 },  // Membership No
+      3: { cellWidth: 40 },  // Simu
+      4: { cellWidth: 50 },  // Zone
     },
     margin: { left: 10, right: 10 },
     didDrawPage: () => {
@@ -304,9 +255,10 @@ const formatDate = (dateStr: string | null | undefined) => {
     },
   });
 
-  // Save PDF
+  // Save
   doc.save('orodha_ya_washirika.pdf');
 };
+
 
 
 const handleAddLeader = () => {
@@ -323,46 +275,69 @@ const handleAddLeader = () => {
  
 };
 
-  const handleAssignToGroups = async () => {
-    const assignments: { groupId: number; memberId: number }[] = [];
-    for (const userId of selectedMembers) {
-      const user = members.find(m => m.id === userId);
-      if (!user?.member_id) continue;
-      for (const groupId of selectedGroupIds) {
-        const alreadyInGroup = user.groups?.some(g => g.id === groupId);
-        if (!alreadyInGroup) {
-          assignments.push({ groupId, memberId: user.member_id });
-        }
-      }
-    }
+const handleAssignToGroups = async () => {
+  if (selectedGroupIds.length === 0 || selectedMembers.length === 0) {
+    alert('Chagua angalau mshirika mmoja na kundi moja.');
+    return;
+  }
 
-    if (assignments.length === 0) {
-      alert('Hakuna mshirika mpya wa kuongeza kwenye makundi haya.');
-      return;
-    }
+  let successful = 0;
+  const failed: string[] = [];
 
-    let successful = 0;
-    for (const { groupId, memberId } of assignments) {
+  for (const memberId of selectedMembers) {
+    const user = members.find(m => m.id === memberId);
+    if (!user?.membership_number) continue;
+
+    let memberFailed = false;
+
+    for (const groupId of selectedGroupIds) {
       try {
-        await apiFetch(`/groups/${groupId}/add-member`, {
-          method: 'POST',
-          body: JSON.stringify({ member_id: memberId }),
-        });
-        successful++;
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/groups/${groupId}/add-member`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify({ membership_number: user.membership_number }),
+          }
+        );
+
+        const data = await res.json();
+
+        // success OR already exists
+        if (res.ok || res.status === 409) {
+          continue;
+        }
+
+        // real failure (403, 404, 500)
+        memberFailed = true;
+
       } catch (error) {
-        console.warn(` Failed to add member ${memberId} to group ${groupId}: ${error}`);
+        memberFailed = true;
       }
     }
 
-    if (successful > 0) {
-      alert(`✅ ${successful} mshirika ameongezwa kwenye kundi/kundi.`);
+    if (memberFailed) {
+      failed.push(`${user.full_name} (${user.membership_number})`);
     } else {
-      alert(`⚠️ Hakuna aliyefanikiwa kuongezwa. Wengine tayari walikuwa kwenye makundi hayo.`);
+      successful++;
     }
+  }
 
-    setGroupDialogOpen(false);
-    setSelectedGroupIds([]);
-  };
+  if (successful > 0) {
+    alert(`${successful} mshirika ameongezwa kwenye kundi/kundi.`);
+  }
+
+  if (failed.length > 0) {
+    alert(`Wale hawakuongezwa: ${failed.join(', ')}`);
+  }
+
+  setGroupDialogOpen(false);
+  setSelectedGroupIds([]);
+  setSelectedMembers([]);
+};
 
  const handleApprove = async (userId: number) => {
   const response = await apiFetch('/authorize-user', {
@@ -430,6 +405,7 @@ const handleAddLeader = () => {
     { label: 'Ametegwa ushirika', value: 'Ametegwa ushirika' },
     { label: 'Amefariki', value: 'Amefariki' },
     { label: 'Amepotea', value: 'Amepotea' },
+    { label: 'Amejisajiri kimakosa', value: 'Amejisajiri kimakosa' },
   ];
 
   const isAnyAlreadyInGroup = selectedMembers.some(memberId => {
@@ -636,6 +612,8 @@ const handleAddLeader = () => {
 
 
 
+
+
   <button
     onClick={() => setGroupDialogOpen(true)}
     className="bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded flex items-center gap-2 text-sm font-medium"
@@ -671,6 +649,7 @@ const handleAddLeader = () => {
       <h2 className="text-lg font-semibold mb-4 text-gray-800">
         Chagua Makundi ya Kuongeza
       </h2>
+
       <div className="space-y-2 max-h-64 overflow-y-auto text-sm text-gray-700 pr-1">
         {groups.map(group => (
           <label key={group.id} className="flex items-center gap-2">
@@ -678,10 +657,9 @@ const handleAddLeader = () => {
               type="checkbox"
               checked={selectedGroupIds.includes(group.id)}
               onChange={e => {
+                const checked = e.target.checked;
                 setSelectedGroupIds(prev =>
-                  e.target.checked
-                    ? [...prev, group.id]
-                    : prev.filter(id => id !== group.id)
+                  checked ? [...prev, group.id] : prev.filter(id => id !== group.id)
                 );
               }}
             />
@@ -689,6 +667,7 @@ const handleAddLeader = () => {
           </label>
         ))}
       </div>
+
       <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
         <button
           onClick={() => setGroupDialogOpen(false)}
@@ -696,22 +675,12 @@ const handleAddLeader = () => {
         >
           Ghairi
         </button>
+
         <button
-          disabled={
-            selectedGroupIds.length === 0 ||
-            selectedMembers.every(id => {
-              const user = members.find(m => m.id === id);
-              return (
-                !user?.member_id ||
-                selectedGroupIds.every(gid =>
-                  user.groups?.some(g => g.id === gid)
-                )
-              );
-            })
-          }
           onClick={handleAssignToGroups}
+          disabled={selectedGroupIds.length === 0 || selectedMembers.length === 0}
           className={`px-4 py-2 text-sm rounded text-white ${
-            isAnyAlreadyInGroup
+            selectedGroupIds.length === 0 || selectedMembers.length === 0
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-blue-600 hover:bg-blue-500'
           }`}
