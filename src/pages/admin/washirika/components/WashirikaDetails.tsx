@@ -38,10 +38,10 @@ type Member = {
 };
 
 export default function WashirikaDetails({
-  memberId,
+   userId, 
   onBack,
 }: {
-  memberId: number;
+  userId: number;
   onBack: () => void;
 }) {
   const [member, setMember] = useState<Member | null>(null);
@@ -49,25 +49,25 @@ export default function WashirikaDetails({
   const [isEditing, setIsEditing] = useState(false);
   const [editValues, setEditValues] = useState<any>({});
 
-  useEffect(() => {
-    if (!memberId) return;
+ useEffect(() => {
+  if (!userId) return;
 
-    const fetchMember = async () => {
-      try {
-        const response = await apiFetch(`/members/${memberId}`);
-        if (response?.member) {
-          setMember(response.member);
-          setEditValues(response.member);
-        }
-      } catch (error) {
-        console.error('Failed to fetch member:', error);
-      } finally {
-        setLoading(false);
+  const fetchMember = async () => {
+    try {
+      const response = await apiFetch(`/members/by-user/${userId}`);
+      if (response?.member) {
+        setMember(response.member);
+        setEditValues(response.member);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch member:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchMember();
-  }, [memberId]);
+  fetchMember();
+}, [userId]);
 
   if (loading) return <p className="text-gray-500 p-8">Inapakia...</p>;
   if (!member) return <p className="text-red-500 p-8">Mshirika hakupatikana.</p>;

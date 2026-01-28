@@ -15,98 +15,131 @@ export interface Role {
 }
 
 export interface Member {
-  id: number;          
+  id: number;
   full_name: string;
   email: string | null;
   phone: string | null;
 }
 
-interface AddLeaderModalProps {
+export interface Leader {
+  id: number;
+  user_id?: number;
+  full_name: string;
+  phone?: string;
+  email?: string;
+  roles: Role[];
+}
+
+interface LeaderModalProps {
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
   roles: Role[];
-  members: Member[];                     // list of USERS
-  currentLeaders: { user_id: number }[]; // existing leaders
-  selectedMember?: Member | null;        // preselected user
-  onLeaderAdded: () => Promise<void>;
+  members: Member[];
+  currentLeaders: { user_id: number }[];
+  leaderToEdit?: Leader | null; // if provided → edit mode
+  onSaved: () => Promise<void>;
 }
 
 /* ======================
    Component
 ====================== */
 
-export default function AddLeaderModal({
+export default function LeaderModal({
   isOpen,
   setIsOpen,
   roles,
   members,
   currentLeaders,
-  selectedMember,
-  onLeaderAdded,
-}: AddLeaderModalProps) {
-  const [selectedRoleId, setSelectedRoleId] = useState<number | ''>('');
+  leaderToEdit = null,
+  onSaved,
+}: LeaderModalProps) {
   const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
+  const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([]);
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
-  /* ======================
-     Reset state on open/close
-  ====================== */
+  // Reset state when modal opens/closes
   useEffect(() => {
-    if (isOpen) {
-      setSelectedUserId(selectedMember?.id ?? '');
+    if (isOpen && leaderToEdit) {
+      setSelectedUserId(leaderToEdit.user_id ?? '');
+      setSelectedRoleIds(leaderToEdit.roles.map(r => r.id));
+      setFullName(leaderToEdit.full_name);
+      setPhone(leaderToEdit.phone ?? '');
+      setEmail(leaderToEdit.email ?? '');
     } else {
-      setSelectedRoleId('');
       setSelectedUserId('');
+      setSelectedRoleIds([]);
+      setFullName('');
+      setPhone('');
+      setEmail('');
     }
-  }, [isOpen, selectedMember]);
+  }, [isOpen, leaderToEdit]);
 
   const closeModal = () => setIsOpen(false);
 
-  /* ======================
-     Submit
-  ====================== */
-  const handleAdd = async () => {
-    if (!selectedRoleId) {
-      alert('⚠️ Tafadhali chagua nafasi.');
-      return;
-    }
+  // Submit handler
+// Submit handler
+const handleSave = async () => {
+  if (!selectedRoleIds.length) {
+    alert('⚠️ Tafadhali chagua angalau nafasi moja.');
+    return;
+  }
 
-    if (
-      selectedUserId &&
-      currentLeaders.some(l => l.user_id === selectedUserId)
-    ) {
-      alert('⚠️ Mshirika huyu tayari ameteuliwa kuwa kiongozi.');
-      return;
-    }
+  // Prevent duplicate leader assignment
+  if (
+    selectedUserId &&
+    !leaderToEdit &&
+    currentLeaders.some(l => l.user_id === selectedUserId)
+  ) {
+    alert('⚠️ Mshirika huyu tayari ameteuliwa kuwa kiongozi.');
+    return;
+  }
 
-    const payload = {
-      role_id: Number(selectedRoleId),
-      user_id: Number(selectedUserId),
-    };
-
-    try {
-      setLoading(true);
-
-      const res = await apiFetch('/leaders', {
-        method: 'POST',
-        body: payload,
-      });
-
-      if (res.status === 'error') {
-        alert(res.message || 'Imeshindikana kuongeza kiongozi.');
-        return;
-      }
-
-      await onLeaderAdded();
-      closeModal();
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    user_id: selectedUserId ? Number(selectedUserId) : null,
+    role_ids: selectedRoleIds,
+    full_name: fullName,
+    phone,
+    email,
   };
 
-  /* ======================
-     UI
-  ====================== */
+  try {
+    setLoading(true);
+
+    if (leaderToEdit) {
+      // EDIT existing leader → PUT /leaders/:id
+      await apiFetch(`/leaders/${leaderToEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    } else {
+      // ADD new leader → POST /leaders
+      await apiFetch('/leaders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    await onSaved();
+    closeModal();
+  } catch (error: any) {
+    alert(error?.message || 'Hitilafu imetokea.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  if (!isOpen) return null;
+
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={closeModal}>
@@ -115,55 +148,75 @@ export default function AddLeaderModal({
         <div className="fixed inset-0 flex items-center justify-center p-4">
           <Dialog.Panel className="w-full max-w-md bg-white rounded-lg p-6">
             <Dialog.Title className="text-lg font-bold mb-4">
-              Ongeza Kiongozi Mpya
+              {leaderToEdit ? 'Hariri Kiongozi' : 'Ongeza Kiongozi Mpya'}
             </Dialog.Title>
 
-            {/* Selected member info */}
-            <div className="mb-4 text-sm">
-              {selectedMember ? (
-                <>
-                  <strong>Mshirika:</strong> {selectedMember.full_name}
-                </>
-              ) : (
-                'Chagua mshirika kutoka kwenye orodha.'
-              )}
-            </div>
-
             {/* Member select */}
-            {!selectedMember && (
+            {!leaderToEdit && (
               <select
                 className="w-full border rounded px-3 py-2 mb-4"
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(Number(e.target.value))}
               >
                 <option value="">-- Chagua mshirika --</option>
-
                 {members.map((m) => {
                   const alreadyLeader = currentLeaders.some(
                     l => l.user_id === m.id
                   );
-
                   return (
                     <option
                       key={m.id}
                       value={m.id}
                       disabled={alreadyLeader}
                     >
-                      {m.full_name}
-                      {alreadyLeader ? ' (Tayari kiongozi)' : ''}
+                      {m.full_name}{alreadyLeader ? ' (Tayari kiongozi)' : ''}
                     </option>
                   );
                 })}
               </select>
             )}
 
-            {/* Role select */}
+            {/* Full Name */}
+            <input
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Jina Kamili"
+              className="w-full border px-3 py-2 rounded mb-4"
+            />
+
+            {/* Phone */}
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Namba ya Simu"
+              className="w-full border px-3 py-2 rounded mb-4"
+            />
+
+            {/* Email */}
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Barua Pepe"
+              className="w-full border px-3 py-2 rounded mb-4"
+            />
+
+            {/* Roles multi-select */}
+            <label className="block mb-2 font-medium">Chagua Nafasi</label>
             <select
-              className="w-full border rounded px-3 py-2 mb-6"
-              value={selectedRoleId}
-              onChange={(e) => setSelectedRoleId(Number(e.target.value))}
+              multiple
+              className="w-full border rounded px-3 py-2 mb-6 h-32"
+              value={selectedRoleIds.map(String)}
+              onChange={(e) => {
+                const selectedOptions = Array.from(
+                  e.target.selectedOptions,
+                  (option) => Number(option.value)
+                );
+                setSelectedRoleIds(selectedOptions);
+              }}
             >
-              <option value="">-- Chagua nafasi --</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.title}
@@ -175,18 +228,17 @@ export default function AddLeaderModal({
             <div className="flex justify-end gap-3">
               <button
                 onClick={closeModal}
+                disabled={loading}
                 className="border px-4 py-2 rounded hover:bg-gray-100"
               >
                 Ghairi
               </button>
 
               <button
-                onClick={handleAdd}
-                disabled={loading || !selectedRoleId || !selectedUserId}
+                onClick={handleSave}
+                disabled={loading || !fullName || !selectedRoleIds.length}
                 className={`px-4 py-2 rounded text-white ${
-                  loading
-                    ? 'bg-gray-400'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                  loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
                 }`}
               >
                 {loading ? 'Inahifadhi...' : 'Hifadhi'}

@@ -197,7 +197,7 @@ const deleteSelectedRoles = async () => {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
         <WashirikaDetails
-          memberId={selectedMemberId}
+          userId={selectedMemberId}
           onBack={() => setSelectedMemberId(null)}
         />
       </div>

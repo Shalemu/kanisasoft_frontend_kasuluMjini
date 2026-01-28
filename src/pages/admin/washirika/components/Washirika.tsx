@@ -426,7 +426,7 @@ const handleAssignToGroups = async () => {
   if (selectedMemberId) {
     return (
       <WashirikaDetails
-        memberId={selectedMemberId}
+        userId={selectedMemberId}
         onBack={() => setSelectedMemberId(null)}
       />
     );
