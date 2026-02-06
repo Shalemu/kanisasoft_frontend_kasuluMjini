@@ -88,7 +88,7 @@ useEffect(() => {
   if (data?.users) {
     const users = data.users.map((u: any) => ({
       //  PRIMARY ID FOR UI & ACTIONS (ALWAYS USER ID)
-      id: u.id,                 // ✅ user_id only
+      id: u.id,                 //  user_id only
       user_id: u.id,            // (optional but explicit)
       member_id: u.member_id ?? null,
 

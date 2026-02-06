@@ -19,6 +19,13 @@ interface EventType {
   location?: string;
   category?: string;
   description?: string;
+  
+}
+
+interface MemberType {
+  id: number;
+
+  // add other member fields if needed
 }
 
 
@@ -26,6 +33,7 @@ interface UserType {
   id: number;
   full_name: string;
   role: string | null;
+  member?: MemberType;
   // add other fields if you need them
 }
 
@@ -65,6 +73,7 @@ async function fetchGroups() {
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [showAnnouncements, setShowAnnouncements] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
+  const ACTIVE_STATUS = 'active';
 
   // For weekly filtering
   const today = new Date();
@@ -188,15 +197,32 @@ async function fetchGroups() {
     const res = await apiFetch('/guests');
     if (res.status === 'success') setVisitorCount(res.guests?.length || 0);
   }
+
+
 async function fetchMembers() {
-  const res = await apiFetch('/users');
-  if (res.status === 'success') {
-    // Type the users array
-    const users: UserType[] = res.users || [];
-    const activeMembers = users.filter((u: UserType) => u.role !== null);
-    setTotalMembers(activeMembers.length);
+  try {
+    const data = await apiFetch('/users'); // fetch all users
+    if (data?.users) {
+      const users = data.users as any[];
+
+      // Count members who are not 'mchungaji' and are active or null
+      const activeMembersCount = users.filter(
+        (m) =>
+          m.role !== 'mchungaji' &&
+          (m.membership_status === ACTIVE_STATUS || m.membership_status === null)
+      ).length;
+
+      setTotalMembers(activeMembersCount);
+    }
+  } catch (err) {
+    console.error('Failed to fetch members count:', err);
+    setTotalMembers(0); // fallback
   }
 }
+
+
+
+
 
 
 
