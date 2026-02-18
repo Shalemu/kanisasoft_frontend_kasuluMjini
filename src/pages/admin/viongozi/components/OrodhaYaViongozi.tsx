@@ -183,14 +183,20 @@ const deleteSelectedRoles = async () => {
   };
 
   const filteredLeaders = leaders
-    .filter(
-      (l) =>
-        (l.name.toLowerCase().includes(search.toLowerCase()) ||
-          l.email?.toLowerCase().includes(search.toLowerCase()) ||
-          l.phone?.includes(search)) &&
-        (filterRole === 'Yote' || l.role === filterRole)
-    )
-    .sort((a, b) => (a.user_id === null && b.user_id !== null ? -1 : 1));
+  .filter((l) => {
+    const matchesSearch =
+      l.name.toLowerCase().includes(search.toLowerCase()) ||
+      l.email?.toLowerCase().includes(search.toLowerCase()) ||
+      l.phone?.includes(search);
+
+    const matchesRole =
+      filterRole === 'Yote' ||
+      l.roles?.includes(filterRole) ||
+      l.role === filterRole;
+
+    return matchesSearch && matchesRole;
+  })
+  .sort((a, b) => (a.user_id === null && b.user_id !== null ? -1 : 1));
 
   // Show WashirikaDetails when a member row is selected
   if (selectedMemberId !== null) {
