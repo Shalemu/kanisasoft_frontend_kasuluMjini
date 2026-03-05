@@ -3,6 +3,16 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCalendarDays, faShieldHalved, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+
+
+type Feature = {
+  title: string;
+  desc: string;
+  icon: IconDefinition;
+};
 
 export default function Home() {
   const [navOpen, setNavOpen] = useState(false);
@@ -18,6 +28,24 @@ export default function Home() {
     window.addEventListener('mousemove', handler);
     return () => window.removeEventListener('mousemove', handler);
   }, []);
+
+    const features: Feature[] = [
+    {
+      title: "Matukio ya Kanisa",
+      desc: "Panga ibada, mikutano na sherehe maalum kwa kalenda ya kidigitali na inayoonekana kwa wote.",
+      icon: faCalendarDays,
+    },
+    {
+      title: "Mifumo ya Kundi",
+      desc: "Weka viongozi wa vikundi na ufuatilie taarifa zao kwa usahihi.",
+      icon: faShieldHalved,
+    },
+    {
+      title: "Dashboard ya Viongozi",
+      desc: "Mchungaji, katibu au mhasibu kila mmoja anaona dashboard yake yenye taarifa anazohitaji.",
+      icon: faChartLine,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#130728] via-[#211a45] to-[#253266] relative text-white overflow-x-hidden font-sans">
@@ -110,63 +138,66 @@ export default function Home() {
           </div>
         </motion.div>
       </section>
+      
 
-{/* FEATURES SECTION */}
-<section id="features" className="bg-gradient-to-br from-[#2d2646] to-[#232143] py-15 px-6 md:px-10">
-  <div className="max-w-6xl mx-auto">
-    <h2 className="text-4xl font-extrabold text-center mb-14 text-[#f0ce32] drop-shadow-lg">
-      Kwanini utumie KanisaSoft?
-    </h2>
-    <div className="grid md:grid-cols-3 gap-10">
-      {[
-        {
-          title: "Usimamizi wa Washirika",
-          desc: "Hifadhi taarifa zote muhimu za washirika na wageni kwa mpangilio bora na salama.",
-          icon: "👥"
-        },
-        {
-          title: "Uhasibu na Michango",
-          desc: "Fuatilia mapato, sadaka na zaka kwa uwazi na kwa ripoti za kitaalamu.",
-          icon: "💰"
-        },
-        {
-          title: "Taarifa kwa SMS",
-          desc: "Wafikie washirika wote kwa ujumbe mfupi wa haraka moja kwa moja kutoka mfumo.",
-          icon: "📲"
-        },
-        {
-          title: "Matukio ya Kanisa",
-          desc: "Panga ibada, mikutano na sherehe maalum kwa kalenda ya kidigitali na inayoonekana kwa wote.",
-          icon: "📅"
-        },
-        {
-          title: "Mifumo ya Kundi",
-          desc: "Weka viongozi wa vikundi na ufuatilie taarifa zao kwa usahihi.",
-          icon: "🛡️"
-        },
-        {
-          title: "Dashboard ya Viongozi",
-          desc: "Mchungaji, katibu au mhasibu kila mmoja anaona dashboard yake yenye taarifa anazohitaji.",
-          icon: "📊"
-        }
-      ].map((f, i) => (
-        <motion.div
-          key={i}
-          whileHover={{ scale: 1.05 }}
-          className="rounded-3xl p-8 bg-white/10 backdrop-blur-lg border border-white/10 shadow-xl text-center flex flex-col items-center"
-        >
-          <div
-            className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-3xl mb-5 shadow-lg"
-          >
-            {f.icon}
+ {/* FEATURES SECTION */}
+      <section
+        id="features"
+        className="bg-gradient-to-br from-[#2d2646] to-[#232143] py-16 px-6 md:px-10"
+      >
+        <div className="max-w-6xl mx-auto">
+
+          {/* CHURCH LEADERS */}
+          <h2 className="text-4xl font-extrabold text-center mb-14 text-[#f0ce32] drop-shadow-lg">
+            Viongozi wa Kanisa
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-10 mb-20">
+            {[
+              { name: "Oscar B. Kindole", title: "Mchungaji Kiongozi", image: "/images/leaders/oscar.png" },
+              { name: "Wencenslaus Fungamtama", title: "Katibu wa Kanisa", image: "/images/leaders/wencenslaus.png" },
+              { name: "Reuben Bulugu", title: "Mzee wa Kanisa Kiongozi", image: "/images/leaders/reuben.png" },
+            ].map((leader, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ scale: 1.05 }}
+                className="rounded-3xl p-8 bg-white/10 backdrop-blur-lg border border-white/10 shadow-xl text-center flex flex-col items-center"
+              >
+                <Image
+                  src={leader.image}
+                  width={96}
+                  height={96}
+                  alt={leader.name}
+                  className="rounded-full object-cover mb-5 border-4 border-[#f0ce32]"
+                />
+                <h3 className="text-xl font-bold text-[#f0ce32] mb-2">{leader.name}</h3>
+                <p className="text-white/80">{leader.title}</p>
+              </motion.div>
+            ))}
           </div>
-          <h3 className="text-xl font-bold text-[#f0ce32] mb-3">{f.title}</h3>
-          <p className="text-white/80 text-base">{f.desc}</p>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-</section>
+
+          {/* FEATURES */}
+          <h2 className="text-4xl font-extrabold text-center mb-14 text-[#f0ce32] drop-shadow-lg">
+            Kwanini utumie KanisaSoft?
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-10">
+            {features.map((feature, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ scale: 1.05 }}
+                className="rounded-3xl p-8 bg-white/10 backdrop-blur-lg border border-white/10 shadow-xl text-center flex flex-col items-center"
+              >
+                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-5 shadow-lg">
+                  <FontAwesomeIcon icon={feature.icon} className="text-3xl text-[#2d2646]" />
+                </div>
+                <h3 className="text-xl font-bold text-[#f0ce32] mb-3">{feature.title}</h3>
+                <p className="text-white/80 text-base">{feature.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
 
       {/* MATUKIO YA KANISA */}
