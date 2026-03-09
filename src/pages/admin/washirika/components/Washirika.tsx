@@ -76,6 +76,8 @@ export default function Washirika({ onAddNew }: { onAddNew: () => void }) {
   const [leaders, setLeaders] = useState<any[]>([]); // to store added leaders
   const [roles, setRoles] = useState<Role[]>([]); // fetch roles from API
   const [pendingMembers, setPendingMembers] = useState<User[]>([]);
+const [currentPage, setCurrentPage] = useState(1);
+const [rowsPerPage, setRowsPerPage] = useState(10);
 
 
 
@@ -447,6 +449,27 @@ const handleReject = async (id: number, role: string | null) => {
     alert(`Deactivated ${name}`);
   };
 
+  const filteredMembers = members.filter(
+  (m) =>
+    m.role !== 'mchungaji' &&
+    (m.membership_status === ACTIVE_STATUS ||
+      m.membership_status === 'pending' ||
+      m.membership_status === null) &&
+    m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (selectedGroupFilter === '' ||
+      (m.groups && m.groups.some((g) => g.name === selectedGroupFilter)))
+);
+
+const totalMembers = filteredMembers.length;
+const totalPages = Math.ceil(totalMembers / rowsPerPage);
+
+const startIndex = (currentPage - 1) * rowsPerPage;
+const endIndex = startIndex + rowsPerPage;
+
+const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
+
+
+
   if (selectedMemberId) {
     return (
       <WashirikaDetails
@@ -730,114 +753,138 @@ const handleReject = async (id: number, role: string | null) => {
     <div className="col-span-2">Idhinisha</div>
   </div>
 
-  {members
-  .filter(
-    (m) =>
-      m.role !== 'mchungaji' &&
-      (m.membership_status === ACTIVE_STATUS || m.membership_status === 'pending' || m.membership_status === null) &&
-        m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        (selectedGroupFilter === '' ||
-          (m.groups && m.groups.some((g) => g.name === selectedGroupFilter)))
-    )
-    .map((member, index) => (
-      <div
-        key={member.id}
-        className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center px-4 md:px-6 py-4 border-t border-gray-100 text-sm hover:bg-gray-50"
+  {paginatedMembers.map((member, index) => (
+  <div
+    key={member.id}
+    className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center px-4 md:px-6 py-4 border-t border-gray-100 text-sm hover:bg-gray-50"
+  >
+    {/* Index + checkbox */}
+    <div className="flex items-center md:col-span-1">
+      <input
+        type="checkbox"
+        checked={selectedMembers.includes(member.id)}
+        onChange={() => toggleSelect(member.id)}
+        className="mr-2"
+      />
+      <span className="font-semibold">{startIndex + index + 1}</span>
+    </div>
+
+    {/* Name */}
+    <div className="flex flex-col md:col-span-3">
+      <button
+        onClick={() => setSelectedMemberId(member.id)}
+        className="text-left font-semibold text-gray-800 hover:underline text-base"
       >
-        {/* Index + checkbox */}
-        <div className="flex items-center md:col-span-1">
-          <input
-            type="checkbox"
-            checked={selectedMembers.includes(member.id)}
-            onChange={() => toggleSelect(member.id)}
-            className="mr-2"
-          />
-          <span className="font-semibold">{index + 1}</span>
-        </div>
+        {member.full_name}
+      </button>
+      <span className="text-xs text-gray-500">
+        <strong>{member.membership_number || '—'}</strong>
+      </span>
+    </div>
 
-        <div className="flex flex-col md:col-span-3">
+    {/* Phone */}
+    <div className="md:col-span-2 text-gray-700 font-semibold">
+      {member.phone}
+    </div>
+
+    {/* Zone */}
+    <div className="md:col-span-2 text-gray-600 capitalize">
+      {member.residential_zone || '—'}
+    </div>
+
+    {/* Approve / Reject or Status */}
+    <div className="md:col-span-2 flex flex-wrap gap-2">
+      {member.role === null || !member.membership_number ? (
+        <>
           <button
-            onClick={() => setSelectedMemberId(member.id)}
-            className="text-left font-semibold text-gray-800 hover:underline text-base"
-            >
-            {member.full_name}
-          </button>
-          <span className="text-xs text-gray-500">
-            <strong>{member.membership_number || '—'}</strong>
-          </span>
-        </div>
-
-        {/* Nafasi */}
-        {/* <div className="md:col-span-2">
-          <span
-            className={`text-xs font-semibold capitalize ${
-              member.role === 'admin'
-                ? 'text-red-600'
-                : member.membership_status === 'inactive'
-                ? 'text-yellow-600'
-                : 'text-green-600'
-            }`}
+            onClick={() => handleApprove(member.user_id)}
+            className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
           >
-            {member.role === 'admin'
-              ? 'Admin'
-              : member.membership_status === 'inactive'
-              ? 'Ameondolewa Ushirika'
-              : member.role || 'hakuna nafasi'}
-          </span>
-        </div> */}
+            <FaCheck /> Idhinisha
+          </button>
 
-        {/* Simu */}
-        <div className="md:col-span-2 text-gray-700 font-semibold">
-          {member.phone}
-        </div>
-
-        {/* Makundi */}
-        {/* <div className="md:col-span-2 text-gray-600 capitalize">
-          {member.groups?.length
-            ? member.groups.map((g) => g.name).join(', ')
-            : '—'}
-        </div> */}
-
-          {/* Zone */}
-<div className="md:col-span-2 text-gray-600 capitalize">
-  {member.residential_zone || '—'}
-</div>
-
-
-
-        {/* Approve / Reject or Status */}
-        <div className="md:col-span-2 flex flex-wrap gap-2">
-          {member.role === null || !member.membership_number ? (
-            <>
-              <button
-                onClick={() => handleApprove(member.user_id)}
-                className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
-              >
-                <FaCheck /> Idhinisha
-              </button>
-              <button
+          <button
             onClick={() => {
               if (confirm("Una uhakika unataka kumkataa mshirika huyu?")) {
-                handleReject(member.user_id, member.role); // <-- use user_id here
+                handleReject(member.user_id, member.role);
               }
             }}
             className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
           >
             <FaTimes /> Kataa
           </button>
-            </>
-          ) : (
-            <div
-              className={`text-white px-3 py-1 rounded text-sm flex items-center gap-2 ${
-                member.role === 'admin' ? 'bg-blue-700' : 'bg-gray-400'
-              }`}
-            >
-              <FaCheck /> {member.role === 'admin' ? 'Admin' : 'Imeidhinishwa'}
-            </div>
-          )}
+        </>
+      ) : (
+        <div
+          className={`text-white px-3 py-1 rounded text-sm flex items-center gap-2 ${
+            member.role === 'admin' ? 'bg-blue-700' : 'bg-gray-400'
+          }`}
+        >
+          <FaCheck /> {member.role === 'admin' ? 'Admin' : 'Imeidhinishwa'}
         </div>
-      </div>
+      )}
+    </div>
+  </div>
+  
+))}
+</div>
+<div className="flex flex-col md:flex-row justify-between items-center mt-6 gap-4">
+
+  {/* Showing entries */}
+  <div className="text-sm text-gray-600">
+    Showing {startIndex + 1} – {Math.min(endIndex, totalMembers)} of {totalMembers} washirika
+  </div>
+
+  {/* Rows per page */}
+  <div className="flex items-center gap-2 text-sm">
+    <span>Rows:</span>
+    <select
+      value={rowsPerPage}
+      onChange={(e) => {
+        setRowsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+      }}
+      className="border rounded px-2 py-1"
+    >
+      <option value={10}>10</option>
+      <option value={25}>25</option>
+      <option value={50}>50</option>
+    </select>
+  </div>
+
+  {/* Page buttons */}
+  <div className="flex items-center gap-1">
+
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className="px-3 py-1 border rounded disabled:opacity-40"
+    >
+      Prev
+    </button>
+
+    {Array.from({ length: totalPages }, (_, i) => (
+      <button
+        key={i}
+        onClick={() => setCurrentPage(i + 1)}
+        className={`px-3 py-1 border rounded ${
+          currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-white'
+        }`}
+      >
+        {i + 1}
+      </button>
     ))}
+
+    <button
+      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+      disabled={currentPage === totalPages}
+      className="px-3 py-1 border rounded disabled:opacity-40"
+    >
+      Next
+    </button>
+
+  </div>
+
 </div>
     </>
   );
