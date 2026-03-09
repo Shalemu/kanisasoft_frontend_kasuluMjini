@@ -156,7 +156,7 @@ export default function Home() {
             {[
               { name: "Oscar B. Kindole", title: "Mchungaji Kiongozi", image: "/images/leaders/oscar.png" },
               { name: "Wencenslaus Fungamtama", title: "Katibu wa Kanisa", image: "/images/leaders/wencenslaus.png" },
-              { name: "Reuben Bulugu", title: "Mzee wa Kanisa Kiongozi", image: "/images/leaders/reuben.png" },
+              { name: "Reuben Bulugu", title: "Mzee wa Kanisa Kiongozi", image: "/images/leaders/reuben.jpeg" },
             ].map((leader, i) => (
               <motion.div
                 key={i}

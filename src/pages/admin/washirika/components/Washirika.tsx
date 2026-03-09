@@ -75,66 +75,76 @@ export default function Washirika({ onAddNew }: { onAddNew: () => void }) {
   const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
   const [leaders, setLeaders] = useState<any[]>([]); // to store added leaders
   const [roles, setRoles] = useState<Role[]>([]); // fetch roles from API
+  const [pendingMembers, setPendingMembers] = useState<User[]>([]);
 
 
 
   const allSelected = selectedMembers.length === members.length;
   const isAdminSelected = selectedMembers.some(id => members.find(m => m.id === id)?.role === 'admin');
 
+
+
 useEffect(() => {
   const fetchMembers = async () => {
-  const data = await apiFetch('/users');
+    try {
+      const data: { users: any[] } = await apiFetch('/users');
+      if (!data?.users) return;
 
-  if (data?.users) {
-    const users = data.users.map((u: any) => ({
-      //  PRIMARY ID FOR UI & ACTIONS (ALWAYS USER ID)
-      id: u.id,                 //  user_id only
-      user_id: u.id,            // (optional but explicit)
-      member_id: u.member_id ?? null,
+      // Map users to User type
+      const users: User[] = data.users.map((u: any) => ({
+        id: u.id,
+        user_id: u.id,
+        member_id: u.member_id ?? null,
+        full_name: u.full_name,
+        residential_zone: u.residential_zone ?? '',
+        email: u.email ?? null,
+        phone: u.phone ?? null,
+        gender: u.gender ?? null,
+        birth_date: u.birth_date ?? null,
+        birth_place: u.birth_place ?? null,
+        role: u.role ?? null,
+        membership_status: u.membership_status ?? 'pending', // default to pending
+        membership_number: u.membership_number ?? '—',
+        deactivation_reason: u.deactivation_reason ?? null,
+        groups: u.groups ?? [],
+        created_at: u.created_at,
+      }));
 
-      // basic info
-      full_name: u.full_name,
-      residential_zone: u.residential_zone,
-      email: u.email,
-      phone: u.phone,
-      gender: u.gender,
-      birth_date: u.birth_date,
-      birth_place: u.birth_place,
+      // Separate pending members for easy approval
+      const pendingMembers = users.filter(u => u.membership_status === 'pending');
+      const approvedMembers = users.filter(u => u.membership_status !== 'pending');
 
-      // church info
-      role: u.role,
-      membership_status: u.membership_status,
-      membership_number: u.membership_number || '—',
-      deactivation_reason: u.deactivation_reason,
+      // Sort approved members (admins first)
+      approvedMembers.sort((a: User, b: User) => {
+        if (a.role === 'admin') return -1;
+        if (b.role === 'admin') return 1;
+        return 0;
+      });
 
-      // relations
-      groups: u.groups || [],
+      // Set state: pending members first so admin can approve
+      setMembers([...pendingMembers, ...approvedMembers]);
+      setPendingMembers(pendingMembers); // optional separate state
+    } catch (err) {
+      console.error('Error fetching members:', err);
+    }
+  };
 
-      // meta
-      created_at: u.created_at,
-    }));
-
-    const sorted = users.sort((a: User, b: User) => {
-      if (a.role === 'admin') return -1;
-      if (b.role === 'admin') return 1;
-      return 0;
-    });
-
-    setMembers(sorted);
-  }
-};
-
-const fetchRoles = async () => {
-  const data = await apiFetch('/leadership-roles');
-  if (data?.roles) {
-    setRoles(data.roles);
-  }
-};
-
+  const fetchRoles = async () => {
+    try {
+      const data: { roles: any[] } = await apiFetch('/leadership-roles');
+      if (data?.roles) setRoles(data.roles);
+    } catch (err) {
+      console.error('Error fetching roles:', err);
+    }
+  };
 
   const fetchGroups = async () => {
-    const data = await apiFetch('/groups');
-    if (data?.groups) setGroups(data.groups);
+    try {
+      const data: { groups: any[] } = await apiFetch('/groups');
+      if (data?.groups) setGroups(data.groups);
+    } catch (err) {
+      console.error('Error fetching groups:', err);
+    }
   };
 
   fetchMembers();
@@ -390,15 +400,29 @@ const handleAssignToGroups = async () => {
 };
 
 
-  const handleReject = async (id: number, role: string | null) => {
-    if (role === 'admin') return;
-    const response = await apiFetch(`/users/${id}`, { method: 'DELETE' });
-    if (response.status === 'success') {
-      setMembers(prev => prev.filter(m => m.id !== id));
-    } else {
-      alert(response.message || 'Kufuta kumeshindikana.');
-    }
-  };
+const handleReject = async (id: number, role: string | null) => {
+  if (role === 'admin') return;
+
+  const reason = prompt("Tafadhali andika sababu ya kukataa mshirika huyu:") || "Rejected";
+
+  const response = await apiFetch(`/users/${id}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+
+  if (response.status === 'success') {
+    setMembers(prev =>
+      prev.map(m =>
+        m.id === id
+          ? { ...m, membership_status: 'rejected', deactivation_reason: reason }
+          : m
+      )
+    );
+    alert('Mshirika amekataliwa. Sababu imehifadhiwa.');
+  } else {
+    alert(response.message || 'Imeshindikana kumkataa mshirika.');
+  }
+};
 
   const reasons = [
     { label: 'Amehama', value: 'Amehama' },
@@ -710,7 +734,7 @@ const handleAssignToGroups = async () => {
   .filter(
     (m) =>
       m.role !== 'mchungaji' &&
-      (m.membership_status === ACTIVE_STATUS || m.membership_status === null) &&
+      (m.membership_status === ACTIVE_STATUS || m.membership_status === 'pending' || m.membership_status === null) &&
         m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
         (selectedGroupFilter === '' ||
           (m.groups && m.groups.some((g) => g.name === selectedGroupFilter)))
@@ -792,11 +816,15 @@ const handleAssignToGroups = async () => {
                 <FaCheck /> Idhinisha
               </button>
               <button
-                onClick={() => handleReject(member.user_id, member.role)}
-                className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
-              >
-                <FaTimes /> Kataa
-              </button>
+            onClick={() => {
+              if (confirm("Una uhakika unataka kumkataa mshirika huyu?")) {
+                handleReject(member.user_id, member.role); // <-- use user_id here
+              }
+            }}
+            className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+          >
+            <FaTimes /> Kataa
+          </button>
             </>
           ) : (
             <div
