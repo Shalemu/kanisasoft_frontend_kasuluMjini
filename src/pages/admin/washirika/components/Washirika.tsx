@@ -8,6 +8,7 @@ import autoTable from 'jspdf-autotable';
 import { FaUserTie } from 'react-icons/fa';
 import { usePathname, useRouter } from 'next/navigation';
 import AddLeaderModal, { Member, Role } from '@/components/katibu/viongozi/dialogs/AddLeaderModal';
+import Swal from 'sweetalert2';
 
 
 
@@ -289,7 +290,13 @@ const handleAddLeader = () => {
 
 const handleAssignToGroups = async () => {
   if (selectedGroupIds.length === 0 || selectedMembers.length === 0) {
-    alert('Chagua angalau mshirika mmoja na kundi moja.');
+   Swal.fire({
+  title: 'Tahadhari',
+  text: 'Chagua angalau mshirika mmoja na kundi moja.',
+  icon: 'warning',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     return;
   }
 
@@ -339,11 +346,23 @@ const handleAssignToGroups = async () => {
   }
 
   if (successful > 0) {
-    alert(`${successful} mshirika ameongezwa kwenye kundi/kundi.`);
+   Swal.fire({
+  title: 'Imefanikiwa!',
+  text: `${successful} mshirika ameongezwa kwenye kundi/kundi.`,
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // matches your theme
+});
   }
 
   if (failed.length > 0) {
-    alert(`Wale hawakuongezwa: ${failed.join(', ')}`);
+   Swal.fire({
+  title: 'Haikuweza',
+  text: `Wale hawakuongezwa: ${failed.join(', ')}`,
+  icon: 'error', // or 'warning' if you prefer
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // match your app theme
+});
   }
 
   setGroupDialogOpen(false);
@@ -369,7 +388,13 @@ const handleAssignToGroups = async () => {
       )
     );
 
-    alert('Mshirika ameidhinishwa.');
+  Swal.fire({
+  title: 'Umefanikiwa',
+  text: 'Mshirika ameidhinishwa.',
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // your theme color
+});
 
     // Send SMS and Email
     const member = members.find(m => m.user_id === userId);
@@ -397,7 +422,13 @@ const handleAssignToGroups = async () => {
       }
     }
   } else {
-    alert(response.message || 'Imeshindikana.');
+   Swal.fire({
+  title: 'Tatizo',
+  text: response.message || 'Imeshindikana.',
+  icon: 'error',             // shows an error icon
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: change to your theme color
+});
   }
 };
 
@@ -420,9 +451,21 @@ const handleReject = async (id: number, role: string | null) => {
           : m
       )
     );
-    alert('Mshirika amekataliwa. Sababu imehifadhiwa.');
+    Swal.fire({
+  title: 'Mshirika amekataliwa',
+  text: 'Sababu imehifadhiwa.',
+  icon: 'warning',              
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: match your theme
+});
   } else {
-    alert(response.message || 'Imeshindikana kumkataa mshirika.');
+  Swal.fire({
+  title: 'Tatizo',
+  text: response.message || 'Imeshindikana kumkataa mshirika.',
+  icon: 'error',                
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: your theme color
+});
   }
 };
 
@@ -446,7 +489,13 @@ const handleReject = async (id: number, role: string | null) => {
 
   const handleSingleDeactivate = (name: string, role: string | null) => {
     if (role === 'admin') return;
-    alert(`Deactivated ${name}`);
+    Swal.fire({
+  title: 'Imefanikiwa',
+  text: `Mshirika ${name} amezimwa.`,
+  icon: 'success',               
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: match your theme
+});
   };
 
   const filteredMembers = members.filter(
@@ -490,7 +539,13 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
     members={members}               // full list of members
     selectedMember={selectedMemberForLeader}
     onLeaderAdded={async () => {
-      alert(`${selectedMemberForLeader.full_name} ameongezwa kama kiongozi!`);
+      Swal.fire({
+  title: 'Imefanikiwa!',
+  text: `${selectedMemberForLeader.full_name} ameongezwa kama kiongozi!`,
+  icon: 'success',               
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional, match your theme
+});
 
       // no need to refresh assignments manually; modal handles it internally
       setIsLeaderModalOpen(false);
@@ -587,7 +642,13 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
         <button
           onClick={async () => {
             if (!deactivationReason) {
-              alert('Tafadhali chagua sababu ya deactivation.');
+             Swal.fire({
+  title: 'Tahadhari',
+  text: 'Tafadhali chagua sababu ya deactivation.',
+  icon: 'warning',               
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional, match your theme
+});
               return;
             }
 
@@ -643,7 +704,13 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
 <button
   onClick={() => {
     if (selectedMembers.length !== 1) {
-      alert('⚠️ Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
+      Swal.fire({
+  title: 'Tahadhari',
+  text: 'Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.',
+  icon: 'warning',               // warning icon
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional, matches your theme
+});
       return;
     }
     const member = members.find(m => m.id === selectedMembers[0]);

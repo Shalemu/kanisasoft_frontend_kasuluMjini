@@ -5,6 +5,7 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import Swal from 'sweetalert2';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({
     fullName: '', gender: '', birthDate: '', birthPlace: '', birthDistrict: '', residence: '',
-    maritalStatus: '', spouseName: '', childrenCount: '', zone: '', phone: '', email: '',
+    maritalStatus: '', spouseName: '', childrenCount: '', zone: '', phone: '', whatsappNumber: '', email: '',
     password: '', passwordConfirmation: '', dateOfConversion: '', churchOfConversion: '',
     baptismDate: '', baptismPlace: '', baptizerName: '', baptizerTitle: '',
     previousChurchStatus: '', tanguLini: '', kanisaUlipotoka: '',
@@ -42,35 +43,43 @@ export default function RegisterPage() {
     const required = ['fullName', 'gender', 'birthDate', 'birthPlace', 'residence', 'zone', 'maritalStatus', 'phone', 'email', 'password', 'passwordConfirmation'];
     for (const key of required) {
       if (!form[key as keyof typeof form]) {
-        alert('⚠️ Tafadhali jaza taarifa zote muhimu za binafsi kabla ya kuendelea.');
+       Swal.fire({
+      title: 'Taarifa Inakosekana',
+      text: 'Tafadhali jaza taarifa zote muhimu za binafsi kabla ya kuendelea.',
+      icon: 'warning',
+      confirmButtonText: 'Sawa',
+      confirmButtonColor: '#f0ce32',
+    });
         setActiveTab(0);
         return false;
       }
     }
     if (form.password !== form.passwordConfirmation) {
-      alert('⚠️ Neno la siri na uthibitisho wa neno la siri havilingani.');
+      Swal.fire({
+      title: 'Tatizo',
+      text: 'Neno la siri na uthibitisho wa neno la siri havilingani.',
+      icon: 'warning',
+      confirmButtonText: 'Sawa',
+      confirmButtonColor: '#f0ce32', // ← your custom color
+    });
       setActiveTab(0);
       return false;
     }
+
+if (!/^\d{10}$/.test(form.phone)) {
+  Swal.fire({
+    title: 'Namba ya simu si sahihi',
+    text: 'Namba ya simu lazima iwe na tarakimu 10 tu.',
+    icon: 'error',
+    confirmButtonText: 'Sawa',
+    confirmButtonColor: '#f0ce32',
+  });
+  setActiveTab(0);
+  return false;
+}
     return true;
   };
 
-  // const validateFaithInfo = () => {
-  //   const required = ['dateOfConversion', 'churchOfConversion', 'baptismDate', 'baptizerName', 'baptizerTitle', 'previousChurchStatus', 'churchService'];
-  //   for (const key of required) {
-  //     if (!form[key as keyof typeof form]) {
-  //       alert('⚠️ Tafadhali jaza taarifa zote muhimu za imani kabla ya kuendelea.');
-  //       setActiveTab(1);
-  //       return false;
-  //     }
-  //   }
-  //   if (form.previousChurchStatus === 'Nimehamia' && (!form.tanguLini || !form.kanisaUlipotoka)) {
-  //     alert('⚠️ Tafadhali jaza taarifa za kanisa ulipotoka.');
-  //     setActiveTab(1);
-  //     return false;
-  //   }
-  //   return true;
-  // };
 
 const validateFaithInfo = () => {
   // Required fields for faith info
@@ -87,7 +96,13 @@ const validateFaithInfo = () => {
   for (const key of required) {
     const value = form[key as keyof typeof form];
     if (!value || (typeof value === 'string' && value.trim() === "")) {
-      alert('⚠️ Tafadhali jaza taarifa zote muhimu za imani kabla ya kuendelea.');
+      Swal.fire({
+  title: 'Tahadhari',
+  text: 'Tafadhali jaza taarifa zote muhimu za imani kabla ya kuendelea.',
+  icon: 'warning',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
       setActiveTab(1);
       return false;
     }
@@ -96,13 +111,21 @@ const validateFaithInfo = () => {
   // 2️⃣ Conditional required fields if user has moved from another church
   if (form.previousChurchStatus === 'Nimehamia') {
     if (!form.tanguLini || form.tanguLini.trim() === "" || !form.kanisaUlipotoka || form.kanisaUlipotoka.trim() === "") {
-      alert('⚠️ Tafadhali jaza taarifa za kanisa ulipotoka.');
+ 
+
+Swal.fire({
+  title: 'Tahadhari',
+  text: 'Tafadhali jaza taarifa za kanisa ulipotoka.',
+  icon: 'warning',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
       setActiveTab(1);
       return false;
     }
   }
 
-  // ✅ Optional fields (e.g., churchService) are ignored and will not trigger validation
+  
   return true;
 };
 
@@ -118,7 +141,7 @@ const validateFaithInfo = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ Validate Tabs 1 & 2 before register
+    // Validate Tabs 1 & 2 before register
     if (!validatePersonalInfo()) return;
     if (!validateFaithInfo()) return;
 
@@ -141,6 +164,7 @@ const validateFaithInfo = () => {
       children_count: Number(form.childrenCount),
       zone: form.zone,
       phone: form.phone,
+      whatsapp_number: form.whatsappNumber,
       email: form.email,
       password: form.password,
       password_confirmation: form.passwordConfirmation,
@@ -176,20 +200,49 @@ const validateFaithInfo = () => {
       });
 
       if (!response.error) {
-        alert('✅ Usajili umefanikiwa! Tafadhali ingia.');
+        
+  Swal.fire({
+  title: ' Usajili umefanikiwa!',
+  text: 'Tafadhali ingia kwenye akaunti yako.',
+  icon: 'success',
+  confirmButtonText: 'Ingia',
+}).then(() => {
+  router.push('/login'); // navigate after user clicks confirm
+});
         // Immediately navigate to login page
         router.push('/login');
         return;
       } else {
-        alert(`⛔ ${response.message || 'Tatizo limetokea. Jaribu tena.'}`);
+       Swal.fire({
+  title: 'Tatizo',
+  text: `${response.message || 'Kuna Tatizo la kiufundi.'}`,
+  icon: 'error',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // custom button color
+});
       }      
     } catch (error: any) {
       if (error?.errors?.email?.[0]) {
-        alert(`⛔ Barua pepe tayari imesajiliwa: ${error.errors.email[0]}`);
+         Swal.fire({
+    title: ' Barua pepe tayari imesajiliwa',
+    text: error.errors.email[0],
+    icon: 'error',
+    confirmButtonText: 'Sawa',
+  });
       } else if (error?.errors?.phone?.[0]) {
-        alert(`⛔ Namba ya simu tayari imesajiliwa: ${error.errors.phone[0]}`);
+       Swal.fire({
+    title: 'Namba ya simu tayari imesajiliwa',
+    text: error.errors.phone[0],
+    icon: 'error',
+    confirmButtonText: 'Sawa',
+  });
       } else {
-        alert(`⛔ ${error?.message || 'Tatizo limetokea. Jaribu tena.'}`);
+       Swal.fire({
+    title: 'Tatizo',
+    text: error?.message || 'Tatizo limetokea. Jaribu tena.',
+    icon: 'error',
+    confirmButtonText: 'Sawa',
+  });
       }
     } finally {
       setLoading(false);
@@ -216,6 +269,13 @@ const validateFaithInfo = () => {
             )}
             <Field label="Idadi ya Watoto *" name="childrenCount" type="number" value={form.childrenCount} onChange={handleChange} />
             <Field label="Namba ya Simu *" name="phone" type="tel" value={form.phone} onChange={handleChange} />
+            <Field
+            label="Namba ya WhatsApp (Hiari)"
+            name="whatsappNumber"
+            type="tel"
+            value={form.whatsappNumber}
+            onChange={handleChange}
+          />
             <Field label="Barua Pepe *" name="email" type="email" value={form.email} onChange={handleChange} />
             <Field label="Neno la siri *" name="password" type="password" value={form.password} onChange={handleChange} />
             <Field label="Thibitisha Neno la siri *" name="passwordConfirmation" type="password" value={form.passwordConfirmation} onChange={handleChange} />

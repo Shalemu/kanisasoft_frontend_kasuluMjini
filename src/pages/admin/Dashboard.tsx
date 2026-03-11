@@ -46,6 +46,7 @@ export default function DashboardTab() {
 const [groupsCount, setGroupsCount] = useState(0);
 
 async function fetchGroups() {
+  setGroupsLoading(true);
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/groups`, {
       headers: {
@@ -59,6 +60,8 @@ async function fetchGroups() {
     }
   } catch (err) {
     console.error('Failed to fetch groups', err);
+  } finally {
+    setGroupsLoading(false);
   }
 }
 
@@ -74,6 +77,8 @@ async function fetchGroups() {
   const [showAnnouncements, setShowAnnouncements] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const ACTIVE_STATUS = 'active';
+  const [groupsLoading, setGroupsLoading] = useState(true);
+const [membersLoading, setMembersLoading] = useState(true);
 
   // For weekly filtering
   const today = new Date();
@@ -200,30 +205,25 @@ async function fetchGroups() {
 
 
 async function fetchMembers() {
+  setMembersLoading(true);
   try {
-    const data = await apiFetch('/users'); // fetch all users
+    const data = await apiFetch('/users');
     if (data?.users) {
       const users = data.users as any[];
-
-      // Count members who are not 'mchungaji' and are active or null
       const activeMembersCount = users.filter(
         (m) =>
           m.role !== 'mchungaji' &&
           (m.membership_status === ACTIVE_STATUS || m.membership_status === null)
       ).length;
-
       setTotalMembers(activeMembersCount);
     }
   } catch (err) {
     console.error('Failed to fetch members count:', err);
-    setTotalMembers(0); // fallback
+    setTotalMembers(0);
+  } finally {
+    setMembersLoading(false);
   }
 }
-
-
-
-
-
 
 
 
@@ -307,9 +307,10 @@ async function fetchMembers() {
 {
   label: 'Makundi',
   icon: <FaUserFriends className="text-3xl" />,
-  value: groupsCount,
+  value: groupsLoading ? <span className="animate-pulse">...</span> : groupsCount,
   color: 'text-indigo-800'
 },
+
 
 
           {
@@ -318,12 +319,12 @@ async function fetchMembers() {
             value: visitorCount,
             color: 'text-yellow-600'
           },
-          {
-            label: 'Washirika',
-            icon: <FaUsers className="text-3xl" />,
-            value: totalMembers,
-            color: 'text-purple-800'
-          }
+       {
+        label: 'Washirika',
+        icon: <FaUsers className="text-3xl" />,
+        value: membersLoading ? <span className="animate-pulse">...</span> : totalMembers,
+        color: 'text-purple-800'
+      }
         ].map((item, i) => (
           <div key={i} className="glass-card relative p-6 rounded-3xl flex flex-col items-center gap-3 hover:shadow-2xl transition-shadow duration-300 border border-blue-100">
             <div className={`mb-1 ${item.color}`}>{item.icon}</div>
