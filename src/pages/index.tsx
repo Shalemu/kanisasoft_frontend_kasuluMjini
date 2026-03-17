@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarDays, faShieldHalved, faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarDays, faShieldHalved, faChartLine, faUser } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 
@@ -147,35 +147,33 @@ export default function Home() {
       >
         <div className="max-w-6xl mx-auto">
 
-          {/* CHURCH LEADERS */}
           <h2 className="text-4xl font-extrabold text-center mb-14 text-[#f0ce32] drop-shadow-lg">
-            Viongozi wa Kanisa
-          </h2>
+  Viongozi wa Kanisa
+</h2>
 
-          <div className="grid md:grid-cols-3 gap-10 mb-20">
-            {[
-              { name: "Oscar B. Kindole", title: "Mchungaji Kiongozi", image: "/images/leaders/oscar.png" },
-              { name: "Wencenslaus Fungamtama", title: "Katibu wa Kanisa", image: "/images/leaders/wencenslaus.png" },
-              { name: "Reuben Bulugu", title: "Mzee wa Kanisa Kiongozi", image: "/images/leaders/reuben.png" },
-            ].map((leader, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ scale: 1.05 }}
-                className="rounded-3xl p-8 bg-white/10 backdrop-blur-lg border border-white/10 shadow-xl text-center flex flex-col items-center"
-              >
-                <Image
-                  src={leader.image}
-                  width={96}
-                  height={96}
-                  alt={leader.name}
-                  className="rounded-full object-cover mb-5 border-4 border-[#f0ce32]"
-                />
-                <h3 className="text-xl font-bold text-[#f0ce32] mb-2">{leader.name}</h3>
-                <p className="text-white/80">{leader.title}</p>
-              </motion.div>
-            ))}
-          </div>
+<div className="grid md:grid-cols-3 gap-10 mb-20">
+  {[
+  { name: "Jina la Kiongozi 1", title: "Nafasi ya Kiongozi" },
+  { name: "Jina la Kiongozi 2", title: "Nafasi ya Kiongozi" },
+  { name: "Jina la Kiongozi 3", title: "Nafasi ya Kiongozi" },
+  ].map((leader, i) => (
+    <motion.div
+      key={i}
+      whileHover={{ scale: 1.05 }}
+      className="rounded-3xl p-8 bg-white/10 backdrop-blur-lg border border-white/10 shadow-xl text-center flex flex-col items-center"
+    >
+      {/* Font Awesome Icon */}
+      <div className="w-24 h-24 flex items-center justify-center rounded-full mb-5 border-4 border-[#f0ce32] bg-white/20">
+        <FontAwesomeIcon icon={faUser} className="text-4xl text-[#f0ce32]" />
+      </div>
 
+      <h3 className="text-xl font-bold text-[#f0ce32] mb-2">
+        {leader.name}
+      </h3>
+      <p className="text-white/80">{leader.title}</p>
+    </motion.div>
+  ))}
+</div>
           {/* FEATURES */}
           <h2 className="text-4xl font-extrabold text-center mb-14 text-[#f0ce32] drop-shadow-lg">
             Kwanini utumie KanisaSoft?
