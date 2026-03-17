@@ -14,6 +14,7 @@ import { apiFetch } from '@/lib/api';
 import AddRoleModal from '@/components/katibu/viongozi/dialogs/AddRoleModal';
 import { Role } from '@/types/Role';
 import WashirikaDetails from '../../washirika/components/WashirikaDetails';
+import Swal from 'sweetalert2';
 
 interface Leader {
   id: number;
@@ -75,7 +76,18 @@ const toggleSelectAllRoles = () => {
 };
 
 const deleteSelectedRoles = async () => {
-  if (!confirm('Una uhakika unataka kufuta nafasi zilizochaguliwa?')) return;
+  const result = await Swal.fire({
+  title: 'Una uhakika?',
+  text: 'Unataka kufuta nafasi zilizochaguliwa?',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonText: 'Ndiyo, futa',
+  cancelButtonText: 'Ghairi',
+  confirmButtonColor: '#f0ce32',
+  cancelButtonColor: '#d33',
+});
+
+if (!result.isConfirmed) return;
 
   for (const id of selectedRoleIds) {
     await apiFetch(`/leadership-roles/${id}`, { method: 'DELETE' });
@@ -129,13 +141,28 @@ const deleteSelectedRoles = async () => {
     });
 
     if (protectedSelected.length > 0) {
-      alert(
-        'Huwezi kufuta viongozi walio na nafasi za msingi kama "admin" au "mchungaji".'
-      );
+   Swal.fire({
+  title: 'Haiwezekani!',
+  text: 'Huwezi kufuta viongozi walio na nafasi za msingi kama "admin" au "mchungaji".',
+  icon: 'error',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
       return;
     }
 
-    if (!confirm('Una uhakika unataka kuondoa viongozi hawa katika nafasi zao?')) return;
+const result = await Swal.fire({
+  title: 'Una uhakika?',
+  text: 'Unataka kuondoa viongozi hawa katika nafasi zao?',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonText: 'Ndiyo, ondoa',
+  cancelButtonText: 'Ghairi',
+  confirmButtonColor: '#f0ce32',
+  cancelButtonColor: '#d33',
+});
+
+if (!result.isConfirmed) return;
 
     for (const id of selectedIds) {
       await apiFetch(`/leaders/${id}`, { method: 'DELETE' });
@@ -146,7 +173,18 @@ const deleteSelectedRoles = async () => {
   };
 
   const handleRetireLeader = async () => {
-    if (!confirm('Thibitisha kustaafisha viongozi walioteuliwa.')) return;
+  const result = await Swal.fire({
+  title: 'Thibitisha',
+  text: 'Thibitisha kustaafisha viongozi walioteuliwa.',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonText: 'Ndiyo, staafisha',
+  cancelButtonText: 'Ghairi',
+  confirmButtonColor: '#f0ce32',
+  cancelButtonColor: '#d33',
+});
+
+if (!result.isConfirmed) return;
 
     try {
       for (const id of selectedIds) {
@@ -156,7 +194,13 @@ const deleteSelectedRoles = async () => {
       setSelectedIds([]);
     } catch (err) {
       console.error('Failed to retire leaders:', err);
-      alert('Hitilafu imetokea wakati wa kustaafisha viongozi.');
+      Swal.fire({
+  title: 'Hitilafu!',
+  text: 'Hitilafu imetokea wakati wa kustaafisha viongozi.',
+  icon: 'error',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     }
   };
 
@@ -528,15 +572,33 @@ const deleteSelectedRoles = async () => {
                     });
 
                     if (res.status === 'success') {
-                      alert('Nafasi ya kiongozi imesasishwa.');
+                   Swal.fire({
+                    title: 'Imefanikiwa!',
+                    text: 'Nafasi ya kiongozi imesasishwa.',
+                    icon: 'success',
+                    confirmButtonText: 'Sawa',
+                    confirmButtonColor: '#f0ce32',
+                  });
                       setEditId(null);
                       fetchLeaders();
                     } else {
-                      alert(res.message || 'Hitilafu imetokea.');
+                     Swal.fire({
+                    title: 'Hitilafu!',
+                    text: res.message || 'Hitilafu imetokea.',
+                    icon: 'error',
+                    confirmButtonText: 'Sawa',
+                    confirmButtonColor: '#f0ce32',
+                  });
                     }
                   } catch (err) {
                     console.error('Error:', err);
-                    alert('Imeshindikana kusasisha nafasi.');
+                 Swal.fire({
+                title: 'Hitilafu!',
+                text: 'Imeshindikana kusasisha nafasi.',
+                icon: 'error',
+                confirmButtonText: 'Sawa',
+                confirmButtonColor: '#f0ce32',
+              });
                   }
                 }}
               >

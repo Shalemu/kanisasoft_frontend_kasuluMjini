@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FaUserCheck, FaTrash } from 'react-icons/fa';
 import { apiFetch } from '@/lib/api';
+import Swal from 'sweetalert2';
 
 interface User {
   id: number;
@@ -58,13 +59,30 @@ export default function Waliokataliwa() {
       console.warn(`Failed to set member ${member.full_name} to pending`);
     }
   }
-  alert(`${activated} mshirika amewekwa kwenye status ya pending`);
+ Swal.fire({
+  title: 'Imefanikiwa!',
+  text: `${activated} mshirika amewekwa kwenye status ya pending`,
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
   setMembers(prev => prev.filter(m => !selected.includes(m.id)));
   setSelected([]);
 };
 
   const handleDelete = async () => {
-    if (!window.confirm('Una uhakika unataka kufuta hawa washirika kabisa?')) return;
+   const result = await Swal.fire({
+  title: 'Una uhakika?',
+  text: 'Unataka kufuta hawa washirika kabisa?',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonText: 'Ndiyo, futa',
+  cancelButtonText: 'Ghairi',
+  confirmButtonColor: '#f0ce32',
+  cancelButtonColor: '#d33',
+});
+
+if (!result.isConfirmed) return;
 
     let deleted = 0;
     for (const id of selected) {
@@ -81,7 +99,13 @@ export default function Waliokataliwa() {
       }
     }
 
-    alert(`🗑️ ${deleted} washirika wamefutwa kabisa (member + user)`);
+Swal.fire({
+  title: 'Imefanikiwa!',
+  text: `${deleted} washirika wameondolewa kabisa kwenye mfumo`,
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     setMembers(prev => prev.filter(m => !selected.includes(m.id)));
     setSelected([]);
   };

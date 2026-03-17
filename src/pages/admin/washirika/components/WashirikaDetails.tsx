@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { UserIcon } from '@heroicons/react/24/solid';
 import { apiFetch } from '@/lib/api';
+import Swal from 'sweetalert2';
 
 type Member = {
   id: number;
@@ -120,7 +121,13 @@ const handleSave = async () => {
 
     // ✅ Show success
     if (data?.status === 'success') {
-      alert(data.message || 'Mabadiliko yamehifadhiwa!');
+      Swal.fire({
+  title: 'Imefanikiwa!',
+  text: data.message || 'Mabadiliko yamehifadhiwa!',
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
       setMember(data.member); // update local state with fresh data
       setEditValues(data.member);
       setIsEditing(false);

@@ -671,7 +671,13 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
               }
             }
 
-            alert(`✅ ${success} mshirika amepotezwa kwa sababu ya "${deactivationReason}".`);
+           Swal.fire({
+          title: 'Imefanikiwa!',
+          text: `${success} mshirika amepotezwa kwa sababu ya "${deactivationReason}".`,
+          icon: 'success',
+          confirmButtonText: 'Sawa',
+          confirmButtonColor: '#f0ce32',
+        });
             setShowReasonDialog(false);
             setDeactivationReason(null);
           }}
