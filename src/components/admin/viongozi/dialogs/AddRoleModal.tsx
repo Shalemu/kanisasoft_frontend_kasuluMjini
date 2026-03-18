@@ -4,6 +4,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useEffect, useState } from 'react';
 import { Role } from '@/types/Role';
 import { apiFetch } from '@/lib/api';
+import Swal from 'sweetalert2';
 
 interface AddRoleModalProps {
   isOpen: boolean;
@@ -30,7 +31,13 @@ export default function AddRoleModal({
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      alert('Weka jina la nafasi');
+    Swal.fire({
+  title: 'Tahadhari!',
+  text: 'Weka jina la nafasi',
+  icon: 'warning',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
       return;
     }
 
@@ -54,7 +61,13 @@ export default function AddRoleModal({
       onSaved();   // refresh roles table
       onClose();   // close modal
     } catch (error: any) {
-      alert(error?.message || 'Hitilafu imetokea');
+   Swal.fire({
+  title: 'Hitilafu!',
+  text: error?.message || 'Hitilafu imetokea',
+  icon: 'error',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     } finally {
       setLoading(false);
     }

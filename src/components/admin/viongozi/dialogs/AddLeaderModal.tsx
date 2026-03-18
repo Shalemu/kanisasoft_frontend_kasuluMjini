@@ -3,6 +3,7 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import Swal from 'sweetalert2';
 
 /* ======================
    Types
@@ -83,7 +84,13 @@ export default function LeaderModal({
 // Submit handler
 const handleSave = async () => {
   if (!selectedRoleIds.length) {
-    alert('⚠️ Tafadhali chagua angalau nafasi moja.');
+ Swal.fire({
+  title: 'Tahadhari!',
+  text: 'Tafadhali chagua angalau nafasi moja.',
+  icon: 'warning',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     return;
   }
 
@@ -93,7 +100,13 @@ const handleSave = async () => {
     !leaderToEdit &&
     currentLeaders.some(l => l.user_id === selectedUserId)
   ) {
-    alert('⚠️ Mshirika huyu tayari ameteuliwa kuwa kiongozi.');
+Swal.fire({
+  title: 'Tahadhari!',
+  text: 'Mshirika huyu tayari ameteuliwa kuwa kiongozi.',
+  icon: 'warning',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     return;
   }
 
