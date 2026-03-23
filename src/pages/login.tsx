@@ -87,11 +87,12 @@ export default function LoginPage() {
           {/* Header */}
           <div className="flex flex-col items-center mb-6">
             <div className="bg-[#f0ce32] rounded-full p-3">
-              <span className="text-black font-bold text-xl">FPCT KURASINI</span>
+              <span className="text-black font-bold text-xl">KanisaSoft</span>
             </div>
-            <h2 className="mt-4 text-2xl font-bold text-center">Mfumo wa FPCT Kurasini</h2>
+            <h2 className="mt-4 text-2xl font-bold text-center">Inua kanisa lako Kidigitali</h2>
             <p className="text-sm text-gray-300 text-center mt-2">
-              Karibu katika mfumo wa taarifa za washirika, wageni, fedha, matukio na uongozi wa kanisa.
+               KanisaSoft ni mfumo wa kidigitali kwa ajili 
+              ya kusaidia makanisa kusimamia taarifa na shughuli zake kwa urahisi na ufanisi. 
             </p>
           </div>
 
