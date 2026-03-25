@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import {
-  FaUsers, FaArrowLeft, FaCrown,
-  FaFilePdf, FaFileExcel, FaUserPlus, FaTrash,
+  FaUsers,
+  FaArrowLeft,
+  FaCrown,
+  FaFilePdf,
+  FaFileExcel,
+  FaUserPlus,
+  FaTrash,
 } from 'react-icons/fa';
 import { apiFetch } from '@/lib/api';
 import jsPDF from 'jspdf';
@@ -15,8 +20,9 @@ import { toast } from 'react-toastify';
 interface Member {
   id: number;
   full_name?: string;
-  email?: string;
+  // email?: string;
   role?: string;
+  membership_number?: string;
   photo_url?: string;
 }
 
@@ -28,30 +34,34 @@ interface Props {
 
 export default function GroupMembersScreen({ groupId, groupName, onBack }: Props) {
   const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [leader, setLeader] = useState<Member | null>(null);
   const [leaderId, setLeaderId] = useState<number | null>(null);
   const [currentMemberId, setCurrentMemberId] = useState<number | null>(null);
+  const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [allMembers, setAllMembers] = useState<Member[]>([]);
   const [selectedToAdd, setSelectedToAdd] = useState<number | null>(null);
   const perPage = 10;
 
   const isLeader = currentMemberId === leaderId;
 
+  // Fetch group members, leader, and profile
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const [memberRes, profileRes, allMembersRes] = await Promise.all([
+        const [groupRes, profileRes, allMembersRes] = await Promise.all([
           apiFetch(`/groups/${groupId}/members`),
           apiFetch('/mtumiaji/profile'),
           apiFetch('/members'),
         ]);
 
-        if (memberRes?.status === 'success') {
-          setMembers(Array.isArray(memberRes.members) ? memberRes.members.filter(Boolean) : []);
-          setLeaderId(memberRes.leader_id ?? null);
+        if (groupRes?.status === 'success') {
+          setMembers(Array.isArray(groupRes.members) ? groupRes.members : []);
+          setLeaderId(groupRes.leader_id ?? null);
+          setLeader(groupRes.leader ?? null);
         }
 
         if (profileRes?.status === 'success') {
@@ -59,25 +69,22 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
         }
 
         if (allMembersRes?.status === 'success') {
-          setAllMembers(Array.isArray(allMembersRes.members) ? allMembersRes.members.filter(Boolean) : []);
+          setAllMembers(Array.isArray(allMembersRes.members) ? allMembersRes.members : []);
         }
       } catch (err) {
-        console.error('Error loading data:', err);
+        console.error(err);
         toast.error('Hitilafu wakati wa kupakia taarifa.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAll();
+    fetchData();
   }, [groupId]);
 
   const filtered = members.filter((m) =>
-    m &&
-    (
-      m.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      m.role?.toLowerCase().includes(search.toLowerCase())
-    )
+    m.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    m.role?.toLowerCase().includes(search.toLowerCase())
   );
 
   const totalPages = Math.ceil(filtered.length / perPage);
@@ -91,8 +98,8 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
       head: [['#', 'Jina Kamili', 'Barua Pepe', 'Nafasi']],
       body: filtered.map((m, i) => [
         i + 1,
-        (m.full_name || '—') + (m.id === leaderId ? ' (Kiongozi)' : ''),
-        m.email || '-',
+        `${m.full_name || '—'}${m.id === leaderId ? ' (Kiongozi)' : ''}`,
+        // m.email || '-',
         m.role || '-',
       ]),
     });
@@ -103,8 +110,8 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
     const ws = XLSX.utils.json_to_sheet(
       filtered.map((m, i) => ({
         '#': i + 1,
-        Jina: (m.full_name || '—') + (m.id === leaderId ? ' (Kiongozi)' : ''),
-        BaruaPepe: m.email || '',
+        Jina: `${m.full_name || '—'}${m.id === leaderId ? ' (Kiongozi)' : ''}`,
+        // BaruaPepe: m.email || '',
         Nafasi: m.role || '',
       }))
     );
@@ -123,7 +130,7 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
       });
       if (res.status === 'success') {
         toast.success('Mshiriki ameondolewa kikundini.');
-        setMembers((prev) => prev.filter((m) => m?.id !== memberId));
+        setMembers((prev) => prev.filter((m) => m.id !== memberId));
       } else {
         toast.error('Imeshindikana kuondoa mshiriki.');
       }
@@ -154,41 +161,50 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
 
   return (
     <div className="min-h-screen p-6 bg-gray-50">
+      {/* Header */}
       <div className="mb-6">
-        <button onClick={onBack} className="text-blue-600 hover:underline flex items-center gap-1">
+        <button onClick={onBack} className="text-blue-600 hover:underline flex items-center gap-2">
           <FaArrowLeft /> Rudi
         </button>
         <h1 className="text-2xl font-bold mt-3 flex items-center gap-2">
           <FaUsers /> Washiriki wa {groupName}
         </h1>
-        <p className="text-gray-600">Jumla: {filtered.length}</p>
+        {leader && (
+          <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded flex items-center gap-3 shadow-sm">
+            <FaCrown className="text-yellow-600 text-xl" />
+            <div>
+              <p className="text-yellow-800 font-semibold text-sm">Kiongozi wa Kundi</p>
+              <p className="text-gray-700 text-sm">{leader.full_name} ({leader.membership_number || '-'})</p>
+            </div>
+          </div>
+        )}
+        <p className="text-gray-600 mt-2">Jumla: {filtered.length}</p>
       </div>
 
+      {/* Controls */}
       <div className="flex gap-4 mb-4 flex-wrap">
         <input
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
           placeholder="Tafuta mshiriki..."
-          className="border px-3 py-2 rounded w-full md:w-1/3"
+          className="border px-3 py-2 rounded w-full md:w-1/3 shadow-sm"
         />
         {isLeader && (
           <div className="flex gap-2 flex-wrap">
-            <button onClick={() => setShowAddModal(true)} className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded flex items-center gap-2">
+            <button onClick={() => setShowAddModal(true)} className="bg-blue-600 text-white px-3 py-1.5 rounded flex items-center gap-2 hover:bg-blue-700 transition">
               <FaUserPlus /> Ongeza
             </button>
-            <button onClick={exportToPDF} className="bg-red-100 text-red-800 px-3 py-1.5 rounded flex items-center gap-2">
+            <button onClick={exportToPDF} className="bg-red-600 text-white px-3 py-1.5 rounded flex items-center gap-2 hover:bg-red-700 transition">
               <FaFilePdf /> PDF
             </button>
-            <button onClick={exportToExcel} className="bg-green-100 text-green-800 px-3 py-1.5 rounded flex items-center gap-2">
+            <button onClick={exportToExcel} className="bg-green-600 text-white px-3 py-1.5 rounded flex items-center gap-2 hover:bg-green-700 transition">
               <FaFileExcel /> Excel
             </button>
           </div>
         )}
       </div>
 
+      {/* Members Table */}
       {loading ? (
         <p>⏳ Inapakia...</p>
       ) : filtered.length === 0 ? (
@@ -198,19 +214,18 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
           <div className="rounded-xl bg-white shadow border border-gray-300 divide-y divide-dotted divide-gray-300">
             {paginated.map((m, index) => (
               <div key={m.id} className="py-4 px-6 flex items-start md:items-center justify-between gap-4">
-                <div className="w-6 text-sm text-gray-500 font-medium">
-                  {(currentPage - 1) * perPage + index + 1}.
-                </div>
+                <div className="w-6 text-sm text-gray-500 font-medium">{(currentPage - 1) * perPage + index + 1}.</div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                     {m.full_name || '—'}
                     {leaderId === m.id && (
                       <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                        <FaCrown className="text-yellow-600" size={12} /> Kiongozi
+                        <FaCrown className="text-yellow-600" /> Kiongozi
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-gray-500 mt-0.5">{m.email || '-'}</p>
+                  {/* <p className="text-xs text-gray-500 mt-0.5">{m.email || '-'}</p> */}
+                  {m.membership_number && <p className="text-xs text-gray-500 mt-0.5">Namba: {m.membership_number}</p>}
                 </div>
                 <div className="flex gap-2 items-center">
                   {m.role && <span className="text-xs text-gray-500 italic">{m.role}</span>}
@@ -227,34 +242,30 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
             ))}
           </div>
 
+          {/* Pagination */}
           <div className="mt-6 flex justify-center items-center gap-2 text-sm">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
+            >Prev</button>
             {Array.from({ length: totalPages }, (_, i) => (
               <button
                 key={i + 1}
                 onClick={() => setCurrentPage(i + 1)}
                 className={`px-3 py-1 rounded border ${currentPage === i + 1 ? 'bg-blue-100 text-blue-700 font-bold' : ''}`}
-              >
-                {i + 1}
-              </button>
+              >{i + 1}</button>
             ))}
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
+            >Next</button>
           </div>
         </>
       )}
 
+      {/* Add Member Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow w-full max-w-md">
@@ -269,17 +280,13 @@ export default function GroupMembersScreen({ groupId, groupName, onBack }: Props
                 .filter((m) => m && !members.some((existing) => existing.id === m.id))
                 .map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.full_name}
+                    {m.full_name} ({m.membership_number || '-'})
                   </option>
                 ))}
             </select>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowAddModal(false)} className="px-3 py-1 bg-gray-200 rounded">
-                Funga
-              </button>
-              <button onClick={handleAdd} className="px-3 py-1 bg-blue-600 text-white rounded">
-                Ongeza
-              </button>
+              <button onClick={() => setShowAddModal(false)} className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition">Funga</button>
+              <button onClick={handleAdd} className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition">Ongeza</button>
             </div>
           </div>
         </div>
