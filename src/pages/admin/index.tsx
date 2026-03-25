@@ -10,6 +10,7 @@ import { apiFetch } from '@/lib/api';
 const tabComponents: Record<string, any> = {
   Mwanzo: dynamic(() => import('./Dashboard')),
   Washirika: dynamic(() => import('./washirika/')),
+  mahudhurio: dynamic(() => import('./mahudhurio/')),
   Wageni: dynamic(() => import('./wageni')),
   Fedha: dynamic(() => import('./fedha')),
   SMS: dynamic(() => import('./SMS')),
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
   const navItems = Object.keys(tabComponents);
   const ActiveComponent = tabComponents[activeTab];
 
-  // 🔒 Admin access only
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // 🧠 Remember selected tab across refresh
+ 
   useEffect(() => {
     const savedTab = localStorage.getItem('activeAdminTab');
     if (savedTab && tabComponents[savedTab]) {
