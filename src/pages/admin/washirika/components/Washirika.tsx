@@ -406,7 +406,7 @@ const handleAssignToGroups = async () => {
             phone: member.phone,
             email: member.email,
             name: member.full_name,
-            //  message: `Habari ${member.full_name},Usajili wako kwenye mfumo wa KanisSoft umekamilika. Namba yako ya ushirika ni: ${response.member.membership_number}, Karibu KanisaSoft.`,
+             message: `Bwana Yesu asifiwe ${member.full_name}, Sasa wewe ni mshirika rasmi wa fpct kurasini Namba yako ya ushirika ni:  ${response.member.membership_number}`,
             // message: `Hello ${member.full_name}, your membership number is ${response.member.membership_number}`,
             send_email: true
           })

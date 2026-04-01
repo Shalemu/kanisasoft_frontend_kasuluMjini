@@ -1,4 +1,9 @@
 'use client';
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 import { useState, useEffect } from 'react';
 import { FaCalendarAlt, FaFilter, FaUsers, FaMoneyBillWave, FaFileExcel, FaFilePdf } from 'react-icons/fa';
@@ -7,6 +12,8 @@ import { apiFetch } from '@/lib/api';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+
 
 interface ServiceAttendance {
   id: number;
@@ -155,7 +162,10 @@ export default function MahudhurioDashboard() {
     (sum, s) => sum + s.attendance_children + s.attendance_women + s.attendance_men,
     0
   );
-  const totalSadaka = filteredData.reduce((sum, s) => sum + s.total_offerings, 0);
+    const totalSadaka = filteredData.reduce(
+      (sum, s) => sum + Number(s.total_offerings || 0),
+      0
+    );
 
   // Pagination
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -184,33 +194,40 @@ export default function MahudhurioDashboard() {
   };
 
   // Export PDF
-  const exportPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Ripoti ya Mahudhurio & Sadaka', 14, 15);
-    const tableData = filteredData.map(s => [
-      new Date(s.date).toLocaleDateString(),
-      s.service_name,
-      s.preacher,
-      s.attendance_children,
-      s.attendance_women,
-      s.attendance_men,
-      s.attendance_children + s.attendance_women + s.attendance_men,
-      s.total_offerings.toLocaleString(),
-      s.leaders_on_duty || '',
-    ]);
-    (doc as any).autoTable({
-      head: [['Tarehe','Huduma','Mhubiri','Watoto','Wanawake','Wanaume','Jumla','Sadaka','Viongozi']],
-      body: tableData,
-      startY: 20,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [11,61,47] }
-    });
-    doc.save('Mahudhurio.pdf');
-  };
+ const exportPDF = () => {
+  const doc = new jsPDF();
+  doc.text('Ripoti ya Mahudhurio & Sadaka', 14, 15);
+
+  const tableData = filteredData.map(s => [
+    new Date(s.date).toLocaleDateString(),
+    s.service_name,
+    s.preacher,
+    s.attendance_children,
+    s.attendance_women,
+    s.attendance_men,
+    s.attendance_children + s.attendance_women + s.attendance_men,
+    Number(s.total_offerings || 0).toLocaleString(),
+    s.leaders_on_duty || '',
+  ]);
+
+  autoTable(doc, {
+    head: [['Tarehe','Huduma','Mhubiri','Watoto','Wanawake','Wanaume','Jumla','Sadaka','Viongozi']],
+    body: tableData,
+    startY: 20,
+    styles: { fontSize: 8 },
+   headStyles: { 
+   fillColor: '#1e293b', // dark green
+  textColor: '#ffffff', // white text
+  fontStyle: 'bold'
+}
+  });
+
+  doc.save('Mahudhurio.pdf');
+};
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold text-[#0b3d2f] mb-4">Mahudhurio & Sadaka</h2>
+      <h2 className="text-2xl font-bold text-[#1e293b] mb-4">Mahudhurio & Sadaka</h2>
 
       {/* Summary Cards */}
       <div className="flex flex-wrap gap-4 mb-6">
@@ -228,8 +245,8 @@ export default function MahudhurioDashboard() {
             <FaMoneyBillWave className="text-[#1e293b] text-2xl mb-1" />
             <p className="text-gray-500 text-sm font-medium uppercase tracking-wide text-center">Jumla ya Sadaka (TZS)</p>
           <p className="text-[#1e293b] font-bold text-2xl text-center">
-  {loading ? '...' : Number(totalSadaka).toLocaleString('en-US', { minimumFractionDigits: 0 })}
-</p>
+            {loading ? '...' : (Number(totalSadaka) || 0).toLocaleString('en-US', { minimumFractionDigits: 0 })}
+          </p>
         </div>
         </div>
 

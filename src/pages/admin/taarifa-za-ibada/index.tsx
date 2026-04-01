@@ -26,13 +26,13 @@ export default function TaarifaZaIbadaPage() {
       <aside className="w-72 bg-[#1e293b] text-white hidden md:flex md:flex-col">
         <div className="px-6 py-6 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-700 flex items-center justify-center">
+            {/* <div className="w-10 h-10 rounded-lg bg-blue-700 flex items-center justify-center">
               <FaChurch className="text-lg" />
-            </div>
-            <div>
+            </div> */}
+            {/* <div>
               <h2 className="font-bold text-lg">Ibada</h2>
               <p className="text-xs text-blue-200 uppercase">Taarifa za Ibada</p>
-            </div>
+            </div> */}
           </div>
         </div>
 

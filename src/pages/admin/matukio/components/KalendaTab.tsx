@@ -98,33 +98,7 @@ export default function KalendaTab() {
     );
   };
 
-  const handleAddEvent = async () => {
-    if (!formData.title || !formData.date || !formData.category) return;
-
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/events`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-      if (data.status === 'success') {
-        const newEvent = {
-          ...data.event,
-          date: data.event.date.slice(0, 10),
-        };
-        setEvents((prev) => [...prev, newEvent]);
-        setFormData({ title: '', date: '', time: '', description: '', category: '' });
-        setIsOpen(false);
-      }
-    } catch (err) {
-      console.error('Failed to save event', err);
-    }
-  };
+  
 
   const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -210,12 +184,6 @@ export default function KalendaTab() {
             ))}
           </select>
 
-          <button
-            onClick={() => setIsOpen(true)}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm"
-          >
-            <FaPlus /> Ongeza Tukio
-          </button>
         </div>
       </div>
 
@@ -235,70 +203,7 @@ export default function KalendaTab() {
         </table>
       </div>
 
-      {/* Modal */}
-      <Dialog open={isOpen} onClose={() => setIsOpen(false)} className="relative z-50">
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="bg-white max-w-sm w-full rounded-lg p-6 space-y-4 shadow-xl">
-            <Dialog.Title className="text-lg font-semibold text-gray-700">Ongeza Tukio</Dialog.Title>
 
-            <input
-              type="text"
-              placeholder="Jina la tukio"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full border border-gray-300 px-4 py-2 rounded text-sm text-gray-800"
-            />
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              className="w-full border border-gray-300 px-4 py-2 rounded text-sm text-gray-800"
-            />
-            <input
-              type="time"
-              value={formData.time}
-              onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-              className="w-full border border-gray-300 px-4 py-2 rounded text-sm text-gray-800"
-            />
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full border px-4 py-2 rounded text-sm text-gray-800"
-            >
-              <option value="">Chagua Kundi</option>
-              <option value="Washirika">Washirika</option>
-              {groups.map((group) => (
-                <option key={group.id} value={group.name}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
-            <textarea
-              placeholder="Maelezo ya tukio (hiari)"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full border border-gray-300 px-4 py-2 rounded text-sm text-gray-800"
-              rows={3}
-            />
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => setIsOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-              >
-                Ghairi
-              </button>
-              <button
-                onClick={handleAddEvent}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-500"
-              >
-                Hifadhi
-              </button>
-            </div>
-          </Dialog.Panel>
-        </div>
-      </Dialog>
     </div>
   );
 }
