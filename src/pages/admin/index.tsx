@@ -10,7 +10,7 @@ import { apiFetch } from '@/lib/api';
 const tabComponents: Record<string, any> = {
   Mwanzo: dynamic(() => import('./Dashboard')),
   Washirika: dynamic(() => import('./washirika/')),
-  mahudhurio: dynamic(() => import('./mahudhurio/')),
+ 'Taarifa za Ibada': dynamic(() => import('./taarifa-za-ibada')),
   Wageni: dynamic(() => import('./wageni')),
   Fedha: dynamic(() => import('./fedha')),
   SMS: dynamic(() => import('./SMS')),
@@ -52,9 +52,11 @@ export default function AdminDashboard() {
  
   useEffect(() => {
     const savedTab = localStorage.getItem('activeAdminTab');
-    if (savedTab && tabComponents[savedTab]) {
-      setActiveTab(savedTab);
-    }
+  if (savedTab && tabComponents[savedTab]) {
+    setActiveTab(savedTab);
+  } else {
+    setActiveTab('Mwanzo');
+  }
   }, []);
 
   useEffect(() => {
