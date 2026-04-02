@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -9,6 +9,7 @@ import { FaUserTie } from 'react-icons/fa';
 import { usePathname, useRouter } from 'next/navigation';
 import AddLeaderModal, { Member, Role } from '@/components/katibu/viongozi/dialogs/AddLeaderModal';
 import Swal from 'sweetalert2';
+
 
 
 
@@ -79,6 +80,10 @@ export default function Washirika({ onAddNew }: { onAddNew: () => void }) {
   const [pendingMembers, setPendingMembers] = useState<User[]>([]);
 const [currentPage, setCurrentPage] = useState(1);
 const [rowsPerPage, setRowsPerPage] = useState(10);
+const [selectedMonth, setSelectedMonth] = useState('');
+
+const [fromDate, setFromDate] = useState('');
+const [toDate, setToDate] = useState('');
 
 
 
@@ -87,73 +92,128 @@ const [rowsPerPage, setRowsPerPage] = useState(10);
 
 
 
+
+
 useEffect(() => {
-  const fetchMembers = async () => {
-    try {
-      const data: { users: any[] } = await apiFetch('/users');
-      if (!data?.users) return;
-
-      // Map users to User type
-      const users: User[] = data.users.map((u: any) => ({
-        id: u.id,
-        user_id: u.id,
-        member_id: u.member_id ?? null,
-        full_name: u.full_name,
-        residential_zone: u.residential_zone ?? '',
-        email: u.email ?? null,
-        phone: u.phone ?? null,
-        gender: u.gender ?? null,
-        birth_date: u.birth_date ?? null,
-        birth_place: u.birth_place ?? null,
-        role: u.role ?? null,
-        membership_status: u.membership_status ?? 'pending', // default to pending
-        membership_number: u.membership_number ?? '—',
-        deactivation_reason: u.deactivation_reason ?? null,
-        groups: u.groups ?? [],
-        created_at: u.created_at,
-      }));
-
-      // Separate pending members for easy approval
-      const pendingMembers = users.filter(u => u.membership_status === 'pending');
-      const approvedMembers = users.filter(u => u.membership_status !== 'pending');
-
-      // Sort approved members (admins first)
-      approvedMembers.sort((a: User, b: User) => {
-        if (a.role === 'admin') return -1;
-        if (b.role === 'admin') return 1;
-        return 0;
-      });
-
-      // Set state: pending members first so admin can approve
-      setMembers([...pendingMembers, ...approvedMembers]);
-      setPendingMembers(pendingMembers); // optional separate state
-    } catch (err) {
-      console.error('Error fetching members:', err);
-    }
-  };
-
-  const fetchRoles = async () => {
-    try {
-      const data: { roles: any[] } = await apiFetch('/leadership-roles');
-      if (data?.roles) setRoles(data.roles);
-    } catch (err) {
-      console.error('Error fetching roles:', err);
-    }
-  };
-
-  const fetchGroups = async () => {
-    try {
-      const data: { groups: any[] } = await apiFetch('/groups');
-      if (data?.groups) setGroups(data.groups);
-    } catch (err) {
-      console.error('Error fetching groups:', err);
-    }
-  };
-
-  fetchMembers();
+  fetchMembers(selectedMonth);
   fetchRoles();
   fetchGroups();
-}, []);
+}, [selectedMonth]);
+
+const fetchMembers = async (month?: string) => {
+  try {
+    let endpoint = '/users';
+
+    if (month) {
+      endpoint = `/users/filter-by-month?month=${month}`;
+    }
+
+    const data: { users: any[] } = await apiFetch(endpoint);
+
+    if (!data?.users) return;
+
+    const users: User[] = data.users.map((u: any) => ({
+      id: u.id,
+      user_id: u.id,
+      member_id: u.member_id ?? null,
+      full_name: u.full_name,
+      residential_zone: u.residential_zone ?? '',
+      email: u.email ?? null,
+      phone: u.phone ?? null,
+      gender: u.gender ?? null,
+      birth_date: u.birth_date ?? null,
+      birth_place: u.birth_place ?? null,
+      role: u.role ?? null,
+      membership_status: u.membership_status ?? 'pending',
+      membership_number: u.membership_number ?? '—',
+      deactivation_reason: u.deactivation_reason ?? null,
+      groups: u.groups ?? [],
+      created_at: u.created_at,
+    }));
+
+    const pendingMembers = users.filter(
+      (u) => u.membership_status === 'pending'
+    );
+
+    const approvedMembers = users.filter(
+      (u) => u.membership_status !== 'pending'
+    );
+
+    approvedMembers.sort((a, b) => {
+      if (a.role === 'admin') return -1;
+      if (b.role === 'admin') return 1;
+      return 0;
+    });
+
+    setMembers([...pendingMembers, ...approvedMembers]);
+    setPendingMembers(pendingMembers);
+  } catch (err) {
+    console.error('Error fetching members:', err);
+  }
+};
+
+const filteredMembers = useMemo(() => {
+  return members.filter((member: User) => {
+    const createdDate = new Date(member.created_at);
+
+    const matchesRole =
+      member.role !== 'mchungaji' &&
+      (member.membership_status === ACTIVE_STATUS ||
+        member.membership_status === 'pending' ||
+        member.membership_status === null);
+
+    const matchesSearch =
+      member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFrom = !fromDate || createdDate >= new Date(fromDate + 'T00:00:00');
+    const matchesTo   = !toDate   || createdDate <= new Date(toDate + 'T23:59:59');
+
+    const matchesMonth =
+      !selectedMonth || (createdDate.getMonth() + 1) === Number(selectedMonth);
+
+    const matchesGroup =
+      !selectedGroupFilter ||
+      member.groups?.some((g) => g.name === selectedGroupFilter);
+
+    return (
+      matchesRole &&
+      matchesSearch &&
+      matchesFrom &&
+      matchesTo &&
+      matchesMonth &&
+      matchesGroup
+    );
+  });
+}, [members, searchTerm, fromDate, toDate, selectedMonth, selectedGroupFilter]);
+
+const fetchRoles = async () => {
+  try {
+    const data: { roles: any[] } = await apiFetch(
+      '/leadership-roles'
+    );
+
+    if (data?.roles) {
+      setRoles(data.roles);
+    }
+  } catch (err) {
+    console.error('Error fetching roles:', err);
+  }
+};
+
+const fetchGroups = async () => {
+  try {
+    const data: { groups: any[] } = await apiFetch(
+      '/groups'
+    );
+
+    if (data?.groups) {
+      setGroups(data.groups);
+    }
+  } catch (err) {
+    console.error('Error fetching groups:', err);
+  }
+};
 
   // Dropdown click outside handler
   useEffect(() => {
@@ -276,7 +336,7 @@ useEffect(() => {
 
 const handleAddLeader = () => {
   if (selectedMembers.length !== 1) {
-    alert('⚠️ Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
+    alert('Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
     return;
   }
 
@@ -498,17 +558,6 @@ const handleReject = async (id: number, role: string | null) => {
 });
   };
 
-  const filteredMembers = members.filter(
-  (m) =>
-    m.role !== 'mchungaji' &&
-    (m.membership_status === ACTIVE_STATUS ||
-      m.membership_status === 'pending' ||
-      m.membership_status === null) &&
-    m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (selectedGroupFilter === '' ||
-      (m.groups && m.groups.some((g) => g.name === selectedGroupFilter)))
-);
-
 const totalMembers = filteredMembers.length;
 const totalPages = Math.ceil(totalMembers / rowsPerPage);
 
@@ -572,42 +621,134 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
             onClick={handleExportExcel}
             className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-sm"
           >
-            📥 Pakua Excel
+            Pakua Excel
           </button>
           <button
             onClick={handleExportPdf}
             className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-sm"
           >
-            🧾 Pakua PDF
+            Pakua PDF
           </button>
         </div>
       </div>
   
-      {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-        <div className="flex flex-col sm:flex-row gap-3 w-full">
-          <input
-            type="text"
-            placeholder="🔍 Tafuta kwa jina..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:flex-1 border px-4 py-2 rounded-lg shadow-sm text-sm text-gray-700"
-          />
-  
-          <select
-            value={selectedGroupFilter}
-            onChange={(e) => setSelectedGroupFilter(e.target.value)}
-            className="w-full sm:w-64 border px-4 py-2 rounded-lg shadow-sm text-sm text-gray-700"
+      {/* Search and Filter Panel */}
+<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 mb-6">
+  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    
+    {/* Search */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Tafuta
+      </label>
+      <input
+        type="text"
+        placeholder="Jina au simu..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#1e293b]"
+      />
+    </div>
+
+    {/* From Date */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        From Date
+      </label>
+      <input
+        type="date"
+        value={fromDate}
+        onChange={(e) => setFromDate(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      />
+    </div>
+
+    {/* To Date */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        To Date
+      </label>
+      <input
+        type="date"
+        value={toDate}
+        onChange={(e) => setToDate(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      />
+    </div>
+
+    {/* Month */}
+    {/* <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Mwezi
+      </label>
+      <select
+        value={selectedMonth}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      >
+        <option value="">Miezi yote</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div> */}
+
+    {/* Group */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Kundi
+      </label>
+      <select
+        value={selectedGroupFilter}
+        onChange={(e) =>
+          setSelectedGroupFilter(e.target.value)
+        }
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      >
+        <option value="">Makundi yote</option>
+        {groups.map((group) => (
+          <option
+            key={group.id}
+            value={group.name}
           >
-            <option value="">Makundi yote</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.name}>
-                {group.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+            {group.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* Buttons */}
+  {/* <div className="flex flex-col sm:flex-row gap-3 mt-4 justify-end">
+    <button
+      onClick={() => {
+        setSearchTerm('');
+        setFromDate('');
+        setToDate('');
+        setSelectedMonth('');
+        setSelectedGroupFilter('');
+      }}
+      className="border border-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-50"
+    >
+      Clear
+    </button>
+
+    <button
+      className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm"
+    >
+      Apply Filter
+    </button>
+  </div> */}
+</div>
   
       {showReasonDialog && (
   <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
@@ -690,14 +831,21 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
   </div>
 )}
 
-<div className="mb-4 text-gray-700 font-semibold text-sm sm:text-base">
-  Jumla ya Washirika: {
-    members.filter(
-      (m) =>
-        m.role !== 'mchungaji' &&
-        (m.membership_status === ACTIVE_STATUS || m.membership_status === null)
-    ).length
-  }
+<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 mb-5">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm font-medium text-gray-500">
+        Jumla ya Washirika
+      </p>
+<h2 className="text-2xl font-bold text-[#1e293b] mt-1">
+  {filteredMembers.filter((m) => m.membership_status === ACTIVE_STATUS).length}
+</h2>
+    </div>
+
+    <div className="w-12 h-12 rounded-md bg-green-50 flex items-center justify-center">
+      <FaUsers className="text-[#1e293b] text-xl" />
+    </div>
+  </div>
 </div>
 
 {selectedMembers.length > 0 && (
@@ -812,112 +960,182 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
   </div>
 )}
 
-<div className="bg-white rounded shadow border border-gray-200 overflow-x-auto">
-  {/* Table Header */}
-  <div className="hidden md:grid grid-cols-12 items-center px-6 py-3 border-b border-gray-200 text-sm font-semibold text-gray-600">
-    <div className="col-span-1 flex items-center">
-      <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="mr-2" />
-      #
-    </div>
-    <div className="col-span-3">Jina</div>
-    {/* <div className="col-span-2">Nafasi</div> */}
-    <div className="col-span-2">Simu</div>
-    <div className="col-span-2">Zone</div>
-    <div className="col-span-2">Idhinisha</div>
+<div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden">
+  {/* Header Title */}
+  <div className="px-6 py-4 border-b border-gray-200">
+    <h2 className="text-xl font-bold text-[#1e293b]">
+      Orodha ya Washirika
+    </h2>
   </div>
 
-  {paginatedMembers.map((member, index) => (
-  <div
-    key={member.id}
-    className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center px-4 md:px-6 py-4 border-t border-gray-100 text-sm hover:bg-gray-50"
-  >
-    {/* Index + checkbox */}
-    <div className="flex items-center md:col-span-1">
-      <input
-        type="checkbox"
-        checked={selectedMembers.includes(member.id)}
-        onChange={() => toggleSelect(member.id)}
-        className="mr-2"
-      />
-      <span className="font-semibold">{startIndex + index + 1}</span>
-    </div>
+  {/* Table */}
+  <div className="overflow-x-auto">
+    <table className="w-full">
+      <thead>
+        <tr className="bg-[#1e293b] text-white text-sm">
+          <th className="px-6 py-4 text-left w-12">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              className="w-4 h-4"
+            />
+          </th>
 
-    {/* Name */}
-    <div className="flex flex-col md:col-span-3">
-      <button
-        onClick={() => setSelectedMemberId(member.id)}
-        className="text-left font-semibold text-gray-800 hover:underline text-base"
-      >
-        {member.full_name}
-      </button>
-      <span className="text-xs text-gray-500">
-        <strong>{member.membership_number || '—'}</strong>
-      </span>
-    </div>
+          <th className="px-6 py-4 text-left">
+            Jina
+          </th>
 
-    {/* Phone */}
-    <div className="md:col-span-2 text-gray-700 font-semibold">
-      {member.phone}
-    </div>
+          <th className="px-6 py-4 text-left">
+            Simu
+          </th>
 
-    {/* Zone */}
-    <div className="md:col-span-2 text-gray-600 capitalize">
-      {member.residential_zone || '—'}
-    </div>
+          <th className="px-6 py-4 text-left">
+            Zone
+          </th>
 
-    {/* Approve / Reject or Status */}
-    <div className="md:col-span-2 flex flex-wrap gap-2">
-      {member.role === null || !member.membership_number ? (
-        <>
-          <button
-            onClick={() => handleApprove(member.user_id)}
-            className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+          <th className="px-6 py-4 text-left">
+            Tarehe
+          </th>
+
+          <th className="px-6 py-4 text-left">
+            Hatua
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {paginatedMembers.map((member) => (
+          <tr
+            key={member.id}
+            className="border-b border-gray-100 hover:bg-gray-50 text-sm"
           >
-            <FaCheck /> Idhinisha
-          </button>
+            {/* Checkbox */}
+            <td className="px-6 py-4">
+              <input
+                type="checkbox"
+                checked={selectedMembers.includes(member.id)}
+                onChange={() => toggleSelect(member.id)}
+                className="w-4 h-4"
+              />
+            </td>
 
-          <button
-            onClick={() => {
-              if (confirm("Una uhakika unataka kumkataa mshirika huyu?")) {
-                handleReject(member.user_id, member.role);
-              }
-            }}
-            className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
-          >
-            <FaTimes /> Kataa
-          </button>
-        </>
-      ) : (
-        <div
-          className={`text-white px-3 py-1 rounded text-sm flex items-center gap-2 ${
-            member.role === 'admin' ? 'bg-blue-700' : 'bg-gray-400'
-          }`}
-        >
-          <FaCheck /> {member.role === 'admin' ? 'Admin' : 'Imeidhinishwa'}
-        </div>
-      )}
-    </div>
+            {/* Name */}
+            <td className="px-6 py-4">
+              <button
+                onClick={() =>
+                  setSelectedMemberId(member.id)
+                }
+                className="font-semibold text-gray-800 hover:text-blue-600"
+              >
+                {member.full_name}
+              </button>
+
+              <div className="text-xs text-gray-500 mt-1">
+                {member.membership_number || '—'}
+              </div>
+            </td>
+
+            {/* Phone */}
+            <td className="px-6 py-4 text-gray-700">
+              {member.phone || '—'}
+            </td>
+
+            {/* Zone */}
+            <td className="px-6 py-4 text-gray-600">
+              {member.residential_zone || '—'}
+            </td>
+
+            {/* Date */}
+            <td className="px-6 py-4 text-gray-600">
+              {new Date(
+                member.created_at
+              ).toLocaleDateString()}
+            </td>
+
+            {/* Actions */}
+            <td className="px-6 py-4">
+              <div className="flex gap-2">
+                {member.role === null ||
+                !member.membership_number ? (
+                  <>
+                    <button
+                      onClick={() =>
+                        handleApprove(member.user_id)
+                      }
+                      className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-2 rounded-md text-xs font-medium"
+                    >
+                      Idhinisha
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        Swal.fire({
+                          title: 'Una uhakika?',
+                          text: 'Unataka kumkataa mshirika huyu?',
+                          icon: 'warning',
+                          showCancelButton: true,
+                          confirmButtonText:
+                            'Ndiyo, Kataa',
+                          cancelButtonText: 'Ghairi',
+                          confirmButtonColor:
+                            '#dc2626',
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            handleReject(
+                              member.user_id,
+                              member.role
+                            );
+                          }
+                        });
+                      }}
+                      className="border border-red-600 text-red-700 hover:bg-red-50 px-3 py-2 rounded-md text-xs font-medium"
+                    >
+                      Kataa
+                    </button>
+                  </>
+                ) : (
+                  <span
+                    className={`inline-block px-3 py-2 rounded-md text-xs font-medium text-white ${
+                      member.role === 'admin'
+                        ? 'bg-blue-600'
+                        : 'bg-gray-500'
+                    }`}
+                  >
+                    {member.role === 'admin'
+                      ? 'Admin'
+                      : 'Imeidhinishwa'}
+                  </span>
+                )}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   </div>
-  
-))}
 </div>
-<div className="flex flex-col md:flex-row justify-between items-center mt-6 gap-4">
 
-  {/* Showing entries */}
-  <div className="text-sm text-gray-600">
-    Showing {startIndex + 1} – {Math.min(endIndex, totalMembers)} of {totalMembers} washirika
+{/* Pagination */}
+<div className="flex flex-col md:flex-row justify-between items-center mt-5 gap-4 text-sm">
+  {/* Showing Entries */}
+  <div className="text-gray-600">
+    Showing{' '}
+    <span className="font-semibold">{startIndex + 1}</span> –{' '}
+    <span className="font-semibold">{Math.min(endIndex, totalMembers)}</span> of{' '}
+    <span className="font-semibold">{totalMembers}</span> washirika
   </div>
 
-  {/* Rows per page */}
-  <div className="flex items-center gap-2 text-sm">
-    <span>Rows:</span>
+  {/* Rows Per Page */}
+  <div className="flex items-center gap-2">
+    <span className="text-gray-600">Rows:</span>
     <select
       value={rowsPerPage}
       onChange={(e) => {
         setRowsPerPage(Number(e.target.value));
         setCurrentPage(1);
       }}
-      className="border rounded px-2 py-1"
+      className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
     >
       <option value={10}>10</option>
       <option value={25}>25</option>
@@ -925,39 +1143,64 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
     </select>
   </div>
 
-  {/* Page buttons */}
-  <div className="flex items-center gap-1">
-
+  {/* Page Buttons */}
+  <div className="flex items-center gap-2 flex-wrap">
     <button
       onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
       disabled={currentPage === 1}
-      className="px-3 py-1 border rounded disabled:opacity-40"
+      className="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
     >
       Prev
     </button>
 
-    {Array.from({ length: totalPages }, (_, i) => (
-      <button
-        key={i}
-        onClick={() => setCurrentPage(i + 1)}
-        className={`px-3 py-1 border rounded ${
-          currentPage === i + 1 ? 'bg-blue-600 text-white' : 'bg-white'
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
+    {/* Dynamic page numbers */}
+    {(() => {
+      const pageNumbers: (number | string)[] = [];
+      const visiblePages = 5; // show current ±2 pages
+      const left = Math.max(1, currentPage - 2);
+      const right = Math.min(totalPages, currentPage + 2);
+
+      if (left > 1) {
+        pageNumbers.push(1);
+        if (left > 2) pageNumbers.push('...');
+      }
+
+      for (let i = left; i <= right; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (right < totalPages) {
+        if (right < totalPages - 1) pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+
+      return pageNumbers.map((p, idx) =>
+        typeof p === 'number' ? (
+          <button
+            key={idx}
+            onClick={() => setCurrentPage(p)}
+            className={`min-w-[36px] h-9 border rounded-md text-sm font-medium transition ${
+              currentPage === p
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {p}
+          </button>
+        ) : (
+          <span key={idx} className="px-2">…</span>
+        )
+      );
+    })()}
 
     <button
       onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
       disabled={currentPage === totalPages}
-      className="px-3 py-1 border rounded disabled:opacity-40"
+      className="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
     >
       Next
     </button>
-
   </div>
-
 </div>
     </>
   );
