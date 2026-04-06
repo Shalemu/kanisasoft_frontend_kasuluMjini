@@ -72,7 +72,14 @@ export default function Washirika({ onAddNew }: { onAddNew: () => void }) {
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroupFilter, setSelectedGroupFilter] = useState('');
-  const ACTIVE_STATUS = 'active';
+  const MEMBERSHIP_STATUS = {
+  ACTIVE: 'active',
+  PENDING: 'pending',
+  LEFT: 'left',
+  DETAINED: 'detained',
+  DECEASED: 'deceased',
+  LOST: 'lost',
+};
   const [selectedMemberForLeader, setSelectedMemberForLeader] = useState<Member | null>(null);
   const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
   const [leaders, setLeaders] = useState<any[]>([]); // to store added leaders
@@ -84,6 +91,7 @@ const [selectedMonth, setSelectedMonth] = useState('');
 
 const [fromDate, setFromDate] = useState('');
 const [toDate, setToDate] = useState('');
+const [loading, setLoading] = useState(true);
 
 
 
@@ -102,6 +110,8 @@ useEffect(() => {
 
 const fetchMembers = async (month?: string) => {
   try {
+    setLoading(true);
+
     let endpoint = '/users';
 
     if (month) {
@@ -110,7 +120,10 @@ const fetchMembers = async (month?: string) => {
 
     const data: { users: any[] } = await apiFetch(endpoint);
 
-    if (!data?.users) return;
+    if (!data?.users) {
+      setMembers([]);
+      return;
+    }
 
     const users: User[] = data.users.map((u: any) => ({
       id: u.id,
@@ -132,23 +145,19 @@ const fetchMembers = async (month?: string) => {
     }));
 
     const pendingMembers = users.filter(
-      (u) => u.membership_status === 'pending'
+      (u) => u.membership_status === MEMBERSHIP_STATUS.PENDING
     );
 
     const approvedMembers = users.filter(
-      (u) => u.membership_status !== 'pending'
+      (u) => u.membership_status !== MEMBERSHIP_STATUS.PENDING
     );
-
-    approvedMembers.sort((a, b) => {
-      if (a.role === 'admin') return -1;
-      if (b.role === 'admin') return 1;
-      return 0;
-    });
 
     setMembers([...pendingMembers, ...approvedMembers]);
     setPendingMembers(pendingMembers);
   } catch (err) {
     console.error('Error fetching members:', err);
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -158,8 +167,8 @@ const filteredMembers = useMemo(() => {
 
     const matchesRole =
       member.role !== 'mchungaji' &&
-      (member.membership_status === ACTIVE_STATUS ||
-        member.membership_status === 'pending' ||
+      (member.membership_status === MEMBERSHIP_STATUS.ACTIVE ||
+        member.membership_status === MEMBERSHIP_STATUS.PENDING ||
         member.membership_status === null);
 
     const matchesSearch =
@@ -269,18 +278,21 @@ const fetchGroups = async () => {
 
   // Prepare table data
   const tableData = members
-    .filter(
-      (m) =>
-        m.role !== 'mchungaji' &&
-        (m.membership_status === ACTIVE_STATUS || m.membership_status === null)
-    )
-    .map((m, i) => [
-      i + 1,
-      m.full_name || '—',
-      m.membership_number || '—',
-      m.phone || '—',
-      m.residential_zone || '—',
-    ]);
+  .filter(
+    (m) =>
+      m.role !== 'mchungaji' &&
+      (
+        m.membership_status === MEMBERSHIP_STATUS.ACTIVE ||
+        m.membership_status === null
+      )
+  )
+  .map((m, i) => [
+    i + 1,
+    m.full_name || '—',
+    m.membership_number || '—',
+    m.phone || '—',
+    m.residential_zone || '—',
+  ]);
 
   // Title
   doc.setFontSize(14);
@@ -336,7 +348,7 @@ const fetchGroups = async () => {
 
 const handleAddLeader = () => {
   if (selectedMembers.length !== 1) {
-    alert('Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
+    alert('⚠️ Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
     return;
   }
 
@@ -831,21 +843,72 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
   </div>
 )}
 
-<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 mb-5">
+<div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+  {/* Jumla ya Washirika Wote */}
+  <div className="bg-white border border-gray-200 rounded-md shadow-sm p-4">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-500">Jumla ya Washirika</p>
+      <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
+        {loading ? (
+          <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+        ) : (
+          filteredMembers.length
+        )}
+      </h2>
+      </div>
+      <div className="w-12 h-12 rounded-md bg-blue-50 flex items-center justify-center">
+        <FaUsers className="text-[#1e293b] text-xl" />
+      </div>
+    </div>
+  </div>
+
+  {/* Washirika Waliothibitishwa */}
+<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4">
   <div className="flex items-center justify-between">
     <div>
       <p className="text-sm font-medium text-gray-500">
-        Jumla ya Washirika
+        Washirika Waliothibitishwa
       </p>
-<h2 className="text-2xl font-bold text-[#1e293b] mt-1">
-  {filteredMembers.filter((m) => m.membership_status === ACTIVE_STATUS).length}
-</h2>
+      <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
+        {loading ? (
+          <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+        ) : (
+          filteredMembers.filter(
+            (m) => m.membership_status === MEMBERSHIP_STATUS.ACTIVE
+          ).length
+        )}
+      </h2>
     </div>
-
     <div className="w-12 h-12 rounded-md bg-green-50 flex items-center justify-center">
       <FaUsers className="text-[#1e293b] text-xl" />
     </div>
   </div>
+</div>
+
+
+  {/* Washirika Wanaosubiri */}
+<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm font-medium text-gray-500">
+        Washirika Wanaosubiri
+      </p>
+      <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
+        {loading ? (
+          <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+        ) : (
+          filteredMembers.filter(
+            (m) => m.membership_status === MEMBERSHIP_STATUS.PENDING
+          ).length
+        )}
+      </h2>
+    </div>
+    <div className="w-12 h-12 rounded-md bg-yellow-50 flex items-center justify-center">
+      <FaUsers className="text-[#1e293b] text-xl" />
+    </div>
+  </div>
+</div>
 </div>
 
 {selectedMembers.length > 0 && (
@@ -1005,7 +1068,32 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
       </thead>
 
       <tbody>
-        {paginatedMembers.map((member) => (
+     
+          {loading ? (
+    <tr>
+      <td
+        colSpan={6}
+        className="px-6 py-10 text-center text-gray-500"
+      >
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-[#1e293b] rounded-full animate-spin"></div>
+          <span className="text-sm font-medium">
+            Inapakia taarifa za washirika...
+          </span>
+        </div>
+      </td>
+    </tr>
+  ) :
+ paginatedMembers.length === 0 ? (
+    <tr>
+      <td
+        colSpan={6}
+        className="px-6 py-10 text-center text-gray-500"
+      >
+        Hakuna washirika waliopatikana
+      </td>
+    </tr>
+  ) : paginatedMembers.map((member) => (
           <tr
             key={member.id}
             className="border-b border-gray-100 hover:bg-gray-50 text-sm"
