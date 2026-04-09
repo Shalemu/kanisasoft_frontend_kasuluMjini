@@ -19,52 +19,13 @@ interface EventType {
   location?: string;
   category?: string;
   description?: string;
-  
-}
-
-interface MemberType {
-  id: number;
-
-  // add other member fields if needed
-}
-
-
-interface UserType {
-  id: number;
-  full_name: string;
-  role: string | null;
-  member?: MemberType;
-  // add other fields if you need them
 }
 
 export default function DashboardTab() {
   const [member, setMember] = useState<any>(null);
   const [contributions, setContributions] = useState<any[]>([]);
   const [chartData, setChartData] = useState<{ name: string; amount: number }[]>([]);
-  // const [groupsCount, setGroupsCount] = useState<number>(0);
-  
-const [groupsCount, setGroupsCount] = useState(0);
-
-async function fetchGroups() {
-  setGroupsLoading(true);
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/groups`, {
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    });
-    const data = await res.json();
-    if (data.status === 'success') {
-      setGroupsCount(data.groups?.length || 0);
-    }
-  } catch (err) {
-    console.error('Failed to fetch groups', err);
-  } finally {
-    setGroupsLoading(false);
-  }
-}
-
+  const [groupsCount, setGroupsCount] = useState<number>(0);
   const [visitorCount, setVisitorCount] = useState<number>(0);
   const [totalMembers, setTotalMembers] = useState<number>(0);
   const [verse, setVerse] = useState('');
@@ -76,9 +37,6 @@ async function fetchGroups() {
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [showAnnouncements, setShowAnnouncements] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
-  const ACTIVE_STATUS = 'active';
-  const [groupsLoading, setGroupsLoading] = useState(true);
-const [membersLoading, setMembersLoading] = useState(true);
 
   // For weekly filtering
   const today = new Date();
@@ -160,8 +118,7 @@ const [membersLoading, setMembersLoading] = useState(true);
         fetchVisitors(),
         fetchMembers(),
         fetchUpcomingEvents(),
-        fetchVerse(),
-        fetchGroups(),
+        fetchVerse()
       ]);
       setIsLoading(false);
     };
@@ -202,31 +159,10 @@ const [membersLoading, setMembersLoading] = useState(true);
     const res = await apiFetch('/guests');
     if (res.status === 'success') setVisitorCount(res.guests?.length || 0);
   }
-
-
-async function fetchMembers() {
-  setMembersLoading(true);
-  try {
-    const data = await apiFetch('/users');
-    if (data?.users) {
-      const users = data.users as any[];
-      const activeMembersCount = users.filter(
-        (m) =>
-          m.role !== 'mchungaji' &&
-          (m.membership_status === ACTIVE_STATUS || m.membership_status === null)
-      ).length;
-      setTotalMembers(activeMembersCount);
-    }
-  } catch (err) {
-    console.error('Failed to fetch members count:', err);
-    setTotalMembers(0);
-  } finally {
-    setMembersLoading(false);
+  async function fetchMembers() {
+    const res = await apiFetch('/users');
+    if (res.status === 'success') setTotalMembers(res.users?.length || 0);
   }
-}
-
-
-
   async function fetchUpcomingEvents() {
     const res = await apiFetch('/events');
     if (res.status === 'success') setUpcomingEvents(res.events);
@@ -304,27 +240,24 @@ async function fetchMembers() {
             value: `TZS ${contributions.reduce((s, r) => s + parseFloat(r.amount || 0), 0).toLocaleString()}`,
             color: 'text-emerald-800'
           },
-{
-  label: 'Makundi',
-  icon: <FaUserFriends className="text-3xl" />,
-  value: groupsLoading ? <span className="animate-pulse">...</span> : groupsCount,
-  color: 'text-indigo-800'
-},
-
-
-
+          {
+            label: 'Makundi',
+            icon: <FaUserFriends className="text-3xl" />,
+            value: groupsCount,
+            color: 'text-indigo-800'
+          },
           {
             label: 'Wageni',
             icon: <FaUserPlus className="text-3xl" />,
             value: visitorCount,
             color: 'text-yellow-600'
           },
-       {
-        label: 'Washirika',
-        icon: <FaUsers className="text-3xl" />,
-        value: membersLoading ? <span className="animate-pulse">...</span> : totalMembers,
-        color: 'text-purple-800'
-      }
+          {
+            label: 'Washirika',
+            icon: <FaUsers className="text-3xl" />,
+            value: totalMembers,
+            color: 'text-purple-800'
+          }
         ].map((item, i) => (
           <div key={i} className="glass-card relative p-6 rounded-3xl flex flex-col items-center gap-3 hover:shadow-2xl transition-shadow duration-300 border border-blue-100">
             <div className={`mb-1 ${item.color}`}>{item.icon}</div>
