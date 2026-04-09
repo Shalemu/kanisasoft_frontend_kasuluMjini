@@ -14,68 +14,116 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!email || !password) {
-      toast.warning('Tafadhali jaza taarifa zote.');
+  if (!email || !password) {
+    toast.warning('Tafadhali jaza taarifa zote.');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    // Send login request
+    const data = await apiFetch('/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    const { token, user, leadership_roles } = data;
+
+    // Pending approval
+    if (!user?.role) {
+      toast.warning(
+        data.message ||
+          'Asante kwa kujisajili. Maombi yako yanahitaji kuidhinishwa na uongozi wa kanisa. Tutakujulisha mara tu utakapokubalika.'
+      );
       return;
     }
 
-    setLoading(true);
-
-    try {
-      // Send login request
-      const data = await apiFetch('/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-
-      const { token, user } = data;
-
-      // Pending approval
-      if (!user?.role) {
-        toast.warning(
-          data.message ||
-            'Asante kwa kujisajili. Maombi yako yanahitaji kuidhinishwa na uongozi wa kanisa. Tutakujulisha mara tu utakapokubalika.'
-        );
-        return;
-      }
-
-      // Login failure
-      if (!token || !user?.id) {
-        toast.error('Login haikufanikiwa. Hakikisha taarifa zako.');
-        return;
-      }
-
-      // Store token and user info
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('user_id', user.id.toString());
-
-      // Redirect based on role
-      const role = user.role?.toLowerCase().trim();
-      const redirectMap: Record<string, string> = {
-        admin: '/admin',
-        katibu: '/katibu',
-        'mtunza hazina': '/treasurer',
-        mchungaji: '/mchungaji',
-        kiongozi: '/group-leader',
-        mshirika: '/member',
-      };
-
-      const redirect = redirectMap[role || ''];
-      if (redirect) {
-        router.push(redirect);
-      } else {
-        toast.warning(`Hujapangiwa jukumu "${user.role}".`);
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Tatizo la mfumo. Jaribu tena.');
-    } finally {
-      setLoading(false);
+    // Login failure
+    if (!token || !user?.id) {
+      toast.error('Login haikufanikiwa. Hakikisha taarifa zako.');
+      return;
     }
-  };
 
+    // Store token and user info
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user_id', user.id.toString());
+
+    const role = user.role?.toLowerCase().trim();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Leader redirect based on leadership title
+    |--------------------------------------------------------------------------
+    */
+    if (role === 'kiongozi') {
+      const titles = (leadership_roles || []).map((r: string) =>
+        r.toLowerCase().replace(/\s+/g, ' ').trim()
+      );
+
+      console.log('Leadership titles:', titles);
+
+      // Pastor routes
+      if (titles.some((t: string) => t.includes('mchungaji'))) {
+        router.push('/mchungaji');
+        return;
+      }
+
+      // Secretary routes
+      if (titles.some((t: string) => t.includes('katibu'))) {
+        router.push('/katibu');
+        return;
+      }
+
+      // Treasurer / finance routes
+      if (
+        titles.some(
+          (t: string) =>
+            t.includes('hazina') ||
+            t.includes('mhasibu')
+        )
+      ) {
+        router.push('/treasurer');
+        return;
+      }
+
+      // Admin routes
+      if (titles.some((t: string) => t.includes('admin'))) {
+        router.push('/admin');
+        return;
+      }
+
+      // Default leader dashboard
+      router.push('/group-leader');
+      return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Normal users redirect
+    |--------------------------------------------------------------------------
+    */
+    const redirectMap: Record<string, string> = {
+      admin: '/admin',
+      mshirika: '/member',
+    };
+
+    const redirect = redirectMap[role || ''];
+
+    if (redirect) {
+      router.push(redirect);
+    } else {
+      toast.warning(`Hujapangiwa jukumu "${user.role}".`);
+    }
+  } catch (err: any) {
+    toast.error(err.message || 'Tatizo la mfumo. Jaribu tena.');
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <>
       <Head>

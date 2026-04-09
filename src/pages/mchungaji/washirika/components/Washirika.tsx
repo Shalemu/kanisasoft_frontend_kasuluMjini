@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -8,6 +8,8 @@ import autoTable from 'jspdf-autotable';
 import { FaUserTie } from 'react-icons/fa';
 import { usePathname, useRouter } from 'next/navigation';
 import AddLeaderModal, { Member, Role } from '@/components/katibu/viongozi/dialogs/AddLeaderModal';
+import Swal from 'sweetalert2';
+
 
 
 
@@ -70,77 +72,157 @@ export default function Washirika({ onAddNew }: { onAddNew: () => void }) {
   const pathname = usePathname();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroupFilter, setSelectedGroupFilter] = useState('');
-  const ACTIVE_STATUS = 'active';
+  const MEMBERSHIP_STATUS = {
+  ACTIVE: 'active',
+  PENDING: 'pending',
+  LEFT: 'left',
+  DETAINED: 'detained',
+  DECEASED: 'deceased',
+  LOST: 'lost',
+};
   const [selectedMemberForLeader, setSelectedMemberForLeader] = useState<Member | null>(null);
   const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
   const [leaders, setLeaders] = useState<any[]>([]); // to store added leaders
   const [roles, setRoles] = useState<Role[]>([]); // fetch roles from API
+  const [pendingMembers, setPendingMembers] = useState<User[]>([]);
+const [currentPage, setCurrentPage] = useState(1);
+const [rowsPerPage, setRowsPerPage] = useState(10);
+const [selectedMonth, setSelectedMonth] = useState('');
+
+const [fromDate, setFromDate] = useState('');
+const [toDate, setToDate] = useState('');
+const [loading, setLoading] = useState(true);
 
 
 
   const allSelected = selectedMembers.length === members.length;
   const isAdminSelected = selectedMembers.some(id => members.find(m => m.id === id)?.role === 'admin');
 
+
+
+
+
 useEffect(() => {
-  const fetchMembers = async () => {
-  const data = await apiFetch('/users');
+  fetchMembers(selectedMonth);
+  fetchRoles();
+  fetchGroups();
+}, [selectedMonth]);
 
-  if (data?.users) {
-    const users = data.users.map((u: any) => ({
-      //  PRIMARY ID FOR UI & ACTIONS (ALWAYS USER ID)
-      id: u.id,                 // ✅ user_id only
-      user_id: u.id,            // (optional but explicit)
+const fetchMembers = async (month?: string) => {
+  try {
+    setLoading(true);
+
+    let endpoint = '/users';
+
+    if (month) {
+      endpoint = `/users/filter-by-month?month=${month}`;
+    }
+
+    const data: { users: any[] } = await apiFetch(endpoint);
+
+    if (!data?.users) {
+      setMembers([]);
+      return;
+    }
+
+    const users: User[] = data.users.map((u: any) => ({
+      id: u.id,
+      user_id: u.id,
       member_id: u.member_id ?? null,
-
-      // basic info
       full_name: u.full_name,
-      residential_zone: u.residential_zone,
-      email: u.email,
-      phone: u.phone,
-      gender: u.gender,
-      birth_date: u.birth_date,
-      birth_place: u.birth_place,
-
-      // church info
-      role: u.role,
-      membership_status: u.membership_status,
-      membership_number: u.membership_number || '—',
-      deactivation_reason: u.deactivation_reason,
-
-      // relations
-      groups: u.groups || [],
-
-      // meta
+      residential_zone: u.residential_zone ?? '',
+      email: u.email ?? null,
+      phone: u.phone ?? null,
+      gender: u.gender ?? null,
+      birth_date: u.birth_date ?? null,
+      birth_place: u.birth_place ?? null,
+      role: u.role ?? null,
+      membership_status: u.membership_status ?? 'pending',
+      membership_number: u.membership_number ?? '—',
+      deactivation_reason: u.deactivation_reason ?? null,
+      groups: u.groups ?? [],
       created_at: u.created_at,
     }));
 
-    const sorted = users.sort((a: User, b: User) => {
-      if (a.role === 'admin') return -1;
-      if (b.role === 'admin') return 1;
-      return 0;
-    });
+    const pendingMembers = users.filter(
+      (u) => u.membership_status === MEMBERSHIP_STATUS.PENDING
+    );
 
-    setMembers(sorted);
+    const approvedMembers = users.filter(
+      (u) => u.membership_status !== MEMBERSHIP_STATUS.PENDING
+    );
+
+    setMembers([...pendingMembers, ...approvedMembers]);
+    setPendingMembers(pendingMembers);
+  } catch (err) {
+    console.error('Error fetching members:', err);
+  } finally {
+    setLoading(false);
   }
 };
+
+const filteredMembers = useMemo(() => {
+  return members.filter((member: User) => {
+    const createdDate = new Date(member.created_at);
+
+    const matchesRole =
+      member.role !== 'mchungaji' &&
+      (member.membership_status === MEMBERSHIP_STATUS.ACTIVE ||
+        member.membership_status === MEMBERSHIP_STATUS.PENDING ||
+        member.membership_status === null);
+
+    const matchesSearch =
+      member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesFrom = !fromDate || createdDate >= new Date(fromDate + 'T00:00:00');
+    const matchesTo   = !toDate   || createdDate <= new Date(toDate + 'T23:59:59');
+
+    const matchesMonth =
+      !selectedMonth || (createdDate.getMonth() + 1) === Number(selectedMonth);
+
+    const matchesGroup =
+      !selectedGroupFilter ||
+      member.groups?.some((g) => g.name === selectedGroupFilter);
+
+    return (
+      matchesRole &&
+      matchesSearch &&
+      matchesFrom &&
+      matchesTo &&
+      matchesMonth &&
+      matchesGroup
+    );
+  });
+}, [members, searchTerm, fromDate, toDate, selectedMonth, selectedGroupFilter]);
 
 const fetchRoles = async () => {
-  const data = await apiFetch('/leadership-roles');
-  if (data?.roles) {
-    setRoles(data.roles);
+  try {
+    const data: { roles: any[] } = await apiFetch(
+      '/leadership-roles'
+    );
+
+    if (data?.roles) {
+      setRoles(data.roles);
+    }
+  } catch (err) {
+    console.error('Error fetching roles:', err);
   }
 };
 
+const fetchGroups = async () => {
+  try {
+    const data: { groups: any[] } = await apiFetch(
+      '/groups'
+    );
 
-  const fetchGroups = async () => {
-    const data = await apiFetch('/groups');
-    if (data?.groups) setGroups(data.groups);
-  };
-
-  fetchMembers();
-  fetchRoles();
-  fetchGroups();
-}, []);
+    if (data?.groups) {
+      setGroups(data.groups);
+    }
+  } catch (err) {
+    console.error('Error fetching groups:', err);
+  }
+};
 
   // Dropdown click outside handler
   useEffect(() => {
@@ -196,18 +278,21 @@ const fetchRoles = async () => {
 
   // Prepare table data
   const tableData = members
-    .filter(
-      (m) =>
-        m.role !== 'mchungaji' &&
-        (m.membership_status === ACTIVE_STATUS || m.membership_status === null)
-    )
-    .map((m, i) => [
-      i + 1,
-      m.full_name || '—',
-      m.membership_number || '—',
-      m.phone || '—',
-      m.residential_zone || '—',
-    ]);
+  .filter(
+    (m) =>
+      m.role !== 'mchungaji' &&
+      (
+        m.membership_status === MEMBERSHIP_STATUS.ACTIVE ||
+        m.membership_status === null
+      )
+  )
+  .map((m, i) => [
+    i + 1,
+    m.full_name || '—',
+    m.membership_number || '—',
+    m.phone || '—',
+    m.residential_zone || '—',
+  ]);
 
   // Title
   doc.setFontSize(14);
@@ -263,7 +348,7 @@ const fetchRoles = async () => {
 
 const handleAddLeader = () => {
   if (selectedMembers.length !== 1) {
-    alert('⚠️ Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
+    alert('Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
     return;
   }
 
@@ -277,7 +362,13 @@ const handleAddLeader = () => {
 
 const handleAssignToGroups = async () => {
   if (selectedGroupIds.length === 0 || selectedMembers.length === 0) {
-    alert('Chagua angalau mshirika mmoja na kundi moja.');
+   Swal.fire({
+  title: 'Tahadhari',
+  text: 'Chagua angalau mshirika mmoja na kundi moja.',
+  icon: 'warning',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     return;
   }
 
@@ -327,11 +418,23 @@ const handleAssignToGroups = async () => {
   }
 
   if (successful > 0) {
-    alert(`${successful} mshirika ameongezwa kwenye kundi/kundi.`);
+   Swal.fire({
+  title: 'Imefanikiwa!',
+  text: `${successful} mshirika ameongezwa kwenye kundi/kundi.`,
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // matches your theme
+});
   }
 
   if (failed.length > 0) {
-    alert(`Wale hawakuongezwa: ${failed.join(', ')}`);
+   Swal.fire({
+  title: 'Haikuweza',
+  text: `Wale hawakuongezwa: ${failed.join(', ')}`,
+  icon: 'error', // or 'warning' if you prefer
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // match your app theme
+});
   }
 
   setGroupDialogOpen(false);
@@ -357,7 +460,13 @@ const handleAssignToGroups = async () => {
       )
     );
 
-    alert('Mshirika ameidhinishwa.');
+  Swal.fire({
+  title: 'Umefanikiwa',
+  text: 'Mshirika ameidhinishwa.',
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // your theme color
+});
 
     // Send SMS and Email
     const member = members.find(m => m.user_id === userId);
@@ -385,20 +494,52 @@ const handleAssignToGroups = async () => {
       }
     }
   } else {
-    alert(response.message || 'Imeshindikana.');
+   Swal.fire({
+  title: 'Tatizo',
+  text: response.message || 'Imeshindikana.',
+  icon: 'error',             // shows an error icon
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: change to your theme color
+});
   }
 };
 
 
-  const handleReject = async (id: number, role: string | null) => {
-    if (role === 'admin') return;
-    const response = await apiFetch(`/users/${id}`, { method: 'DELETE' });
-    if (response.status === 'success') {
-      setMembers(prev => prev.filter(m => m.id !== id));
-    } else {
-      alert(response.message || 'Kufuta kumeshindikana.');
-    }
-  };
+const handleReject = async (id: number, role: string | null) => {
+  if (role === 'admin') return;
+
+  const reason = prompt("Tafadhali andika sababu ya kukataa mshirika huyu:") || "Rejected";
+
+  const response = await apiFetch(`/users/${id}/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+
+  if (response.status === 'success') {
+    setMembers(prev =>
+      prev.map(m =>
+        m.id === id
+          ? { ...m, membership_status: 'rejected', deactivation_reason: reason }
+          : m
+      )
+    );
+    Swal.fire({
+  title: 'Mshirika amekataliwa',
+  text: 'Sababu imehifadhiwa.',
+  icon: 'warning',              
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: match your theme
+});
+  } else {
+  Swal.fire({
+  title: 'Tatizo',
+  text: response.message || 'Imeshindikana kumkataa mshirika.',
+  icon: 'error',                
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: your theme color
+});
+  }
+};
 
   const reasons = [
     { label: 'Amehama', value: 'Amehama' },
@@ -420,13 +561,29 @@ const handleAssignToGroups = async () => {
 
   const handleSingleDeactivate = (name: string, role: string | null) => {
     if (role === 'admin') return;
-    alert(`Deactivated ${name}`);
+    Swal.fire({
+  title: 'Imefanikiwa',
+  text: `Mshirika ${name} amezimwa.`,
+  icon: 'success',               
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional: match your theme
+});
   };
+
+const totalMembers = filteredMembers.length;
+const totalPages = Math.ceil(totalMembers / rowsPerPage);
+
+const startIndex = (currentPage - 1) * rowsPerPage;
+const endIndex = startIndex + rowsPerPage;
+
+const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
+
+
 
   if (selectedMemberId) {
     return (
       <WashirikaDetails
-        memberId={selectedMemberId}
+        userId={selectedMemberId}
         onBack={() => setSelectedMemberId(null)}
       />
     );
@@ -443,7 +600,13 @@ const handleAssignToGroups = async () => {
     members={members}               // full list of members
     selectedMember={selectedMemberForLeader}
     onLeaderAdded={async () => {
-      alert(`${selectedMemberForLeader.full_name} ameongezwa kama kiongozi!`);
+      Swal.fire({
+  title: 'Imefanikiwa!',
+  text: `${selectedMemberForLeader.full_name} ameongezwa kama kiongozi!`,
+  icon: 'success',               
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional, match your theme
+});
 
       // no need to refresh assignments manually; modal handles it internally
       setIsLeaderModalOpen(false);
@@ -470,42 +633,134 @@ const handleAssignToGroups = async () => {
             onClick={handleExportExcel}
             className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-sm"
           >
-            📥 Pakua Excel
+            Pakua Excel
           </button>
           <button
             onClick={handleExportPdf}
             className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded text-sm"
           >
-            🧾 Pakua PDF
+            Pakua PDF
           </button>
         </div>
       </div>
   
-      {/* Search and Filter */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
-        <div className="flex flex-col sm:flex-row gap-3 w-full">
-          <input
-            type="text"
-            placeholder="🔍 Tafuta kwa jina..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:flex-1 border px-4 py-2 rounded-lg shadow-sm text-sm text-gray-700"
-          />
-  
-          <select
-            value={selectedGroupFilter}
-            onChange={(e) => setSelectedGroupFilter(e.target.value)}
-            className="w-full sm:w-64 border px-4 py-2 rounded-lg shadow-sm text-sm text-gray-700"
+      {/* Search and Filter Panel */}
+<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 mb-6">
+  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+    
+    {/* Search */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Tafuta
+      </label>
+      <input
+        type="text"
+        placeholder="Jina au simu..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-[#1e293b]"
+      />
+    </div>
+
+    {/* From Date */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        From Date
+      </label>
+      <input
+        type="date"
+        value={fromDate}
+        onChange={(e) => setFromDate(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      />
+    </div>
+
+    {/* To Date */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        To Date
+      </label>
+      <input
+        type="date"
+        value={toDate}
+        onChange={(e) => setToDate(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      />
+    </div>
+
+    {/* Month */}
+    {/* <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Mwezi
+      </label>
+      <select
+        value={selectedMonth}
+        onChange={(e) => setSelectedMonth(e.target.value)}
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      >
+        <option value="">Miezi yote</option>
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+      </select>
+    </div> */}
+
+    {/* Group */}
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        Kundi
+      </label>
+      <select
+        value={selectedGroupFilter}
+        onChange={(e) =>
+          setSelectedGroupFilter(e.target.value)
+        }
+        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+      >
+        <option value="">Makundi yote</option>
+        {groups.map((group) => (
+          <option
+            key={group.id}
+            value={group.name}
           >
-            <option value="">Makundi yote</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.name}>
-                {group.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+            {group.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* Buttons */}
+  {/* <div className="flex flex-col sm:flex-row gap-3 mt-4 justify-end">
+    <button
+      onClick={() => {
+        setSearchTerm('');
+        setFromDate('');
+        setToDate('');
+        setSelectedMonth('');
+        setSelectedGroupFilter('');
+      }}
+      className="border border-gray-400 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-50"
+    >
+      Clear
+    </button>
+
+    <button
+      className="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-md text-sm"
+    >
+      Apply Filter
+    </button>
+  </div> */}
+</div>
   
       {showReasonDialog && (
   <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
@@ -540,7 +795,13 @@ const handleAssignToGroups = async () => {
         <button
           onClick={async () => {
             if (!deactivationReason) {
-              alert('Tafadhali chagua sababu ya deactivation.');
+             Swal.fire({
+  title: 'Tahadhari',
+  text: 'Tafadhali chagua sababu ya deactivation.',
+  icon: 'warning',               
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional, match your theme
+});
               return;
             }
 
@@ -563,7 +824,13 @@ const handleAssignToGroups = async () => {
               }
             }
 
-            alert(`✅ ${success} mshirika amepotezwa kwa sababu ya "${deactivationReason}".`);
+           Swal.fire({
+          title: 'Imefanikiwa!',
+          text: `${success} mshirika amepotezwa kwa sababu ya "${deactivationReason}".`,
+          icon: 'success',
+          confirmButtonText: 'Sawa',
+          confirmButtonColor: '#f0ce32',
+        });
             setShowReasonDialog(false);
             setDeactivationReason(null);
           }}
@@ -576,14 +843,72 @@ const handleAssignToGroups = async () => {
   </div>
 )}
 
-<div className="mb-4 text-gray-700 font-semibold text-sm sm:text-base">
-  Jumla ya Washirika: {
-    members.filter(
-      (m) =>
-        m.role !== 'mchungaji' &&
-        (m.membership_status === ACTIVE_STATUS || m.membership_status === null)
-    ).length
-  }
+<div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+  {/* Jumla ya Washirika Wote */}
+  <div className="bg-white border border-gray-200 rounded-md shadow-sm p-4">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-medium text-gray-500">Jumla ya Washirika</p>
+      <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
+        {loading ? (
+          <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+        ) : (
+          filteredMembers.length
+        )}
+      </h2>
+      </div>
+      <div className="w-12 h-12 rounded-md bg-blue-50 flex items-center justify-center">
+        <FaUsers className="text-[#1e293b] text-xl" />
+      </div>
+    </div>
+  </div>
+
+  {/* Washirika Waliothibitishwa */}
+<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm font-medium text-gray-500">
+        Washirika Waliothibitishwa
+      </p>
+      <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
+        {loading ? (
+          <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+        ) : (
+          filteredMembers.filter(
+            (m) => m.membership_status === MEMBERSHIP_STATUS.ACTIVE
+          ).length
+        )}
+      </h2>
+    </div>
+    <div className="w-12 h-12 rounded-md bg-green-50 flex items-center justify-center">
+      <FaUsers className="text-[#1e293b] text-xl" />
+    </div>
+  </div>
+</div>
+
+
+  {/* Washirika Wanaosubiri */}
+<div className="bg-white border border-gray-200 rounded-md shadow-sm p-4">
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm font-medium text-gray-500">
+        Washirika Wanaosubiri
+      </p>
+      <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
+        {loading ? (
+          <div className="h-8 w-16 bg-gray-200 rounded animate-pulse"></div>
+        ) : (
+          filteredMembers.filter(
+            (m) => m.membership_status === MEMBERSHIP_STATUS.PENDING
+          ).length
+        )}
+      </h2>
+    </div>
+    <div className="w-12 h-12 rounded-md bg-yellow-50 flex items-center justify-center">
+      <FaUsers className="text-[#1e293b] text-xl" />
+    </div>
+  </div>
+</div>
 </div>
 
 {selectedMembers.length > 0 && (
@@ -596,7 +921,13 @@ const handleAssignToGroups = async () => {
 <button
   onClick={() => {
     if (selectedMembers.length !== 1) {
-      alert('⚠️ Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
+      Swal.fire({
+  title: 'Tahadhari',
+  text: 'Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.',
+  icon: 'warning',               // warning icon
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32', // optional, matches your theme
+});
       return;
     }
     const member = members.find(m => m.id === selectedMembers[0]);
@@ -692,124 +1023,272 @@ const handleAssignToGroups = async () => {
   </div>
 )}
 
-<div className="bg-white rounded shadow border border-gray-200 overflow-x-auto">
-  {/* Table Header */}
-  <div className="hidden md:grid grid-cols-12 items-center px-6 py-3 border-b border-gray-200 text-sm font-semibold text-gray-600">
-    <div className="col-span-1 flex items-center">
-      <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="mr-2" />
-      #
-    </div>
-    <div className="col-span-3">Jina</div>
-    {/* <div className="col-span-2">Nafasi</div> */}
-    <div className="col-span-2">Simu</div>
-    <div className="col-span-2">Zone</div>
-    <div className="col-span-2">Idhinisha</div>
+<div className="bg-white border border-gray-200 rounded-md shadow-sm overflow-hidden">
+  {/* Header Title */}
+  <div className="px-6 py-4 border-b border-gray-200">
+    <h2 className="text-xl font-bold text-[#1e293b]">
+      Orodha ya Washirika
+    </h2>
   </div>
 
-  {members
-  .filter(
-    (m) =>
-      m.role !== 'mchungaji' &&
-      (m.membership_status === ACTIVE_STATUS || m.membership_status === null) &&
-        m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        (selectedGroupFilter === '' ||
-          (m.groups && m.groups.some((g) => g.name === selectedGroupFilter)))
-    )
-    .map((member, index) => (
-      <div
-        key={member.id}
-        className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center px-4 md:px-6 py-4 border-t border-gray-100 text-sm hover:bg-gray-50"
+  {/* Table */}
+  <div className="overflow-x-auto">
+    <table className="w-full">
+      <thead>
+        <tr className="bg-[#1e293b] text-white text-sm">
+          <th className="px-6 py-4 text-left w-12">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+              className="w-4 h-4"
+            />
+          </th>
+
+          <th className="px-6 py-4 text-left">
+            Jina
+          </th>
+
+          <th className="px-6 py-4 text-left">
+            Simu
+          </th>
+
+          <th className="px-6 py-4 text-left">
+            Zone
+          </th>
+
+          <th className="px-6 py-4 text-left">
+            Tarehe
+          </th>
+
+          <th className="px-6 py-4 text-left">
+            Hatua
+          </th>
+        </tr>
+      </thead>
+
+      <tbody>
+     
+          {loading ? (
+    <tr>
+      <td
+        colSpan={6}
+        className="px-6 py-10 text-center text-gray-500"
       >
-        {/* Index + checkbox */}
-        <div className="flex items-center md:col-span-1">
-          <input
-            type="checkbox"
-            checked={selectedMembers.includes(member.id)}
-            onChange={() => toggleSelect(member.id)}
-            className="mr-2"
-          />
-          <span className="font-semibold">{index + 1}</span>
-        </div>
-
-        <div className="flex flex-col md:col-span-3">
-          <button
-            onClick={() => setSelectedMemberId(member.id)}
-            className="text-left font-semibold text-gray-800 hover:underline text-base"
-            >
-            {member.full_name}
-          </button>
-          <span className="text-xs text-gray-500">
-            <strong>{member.membership_number || '—'}</strong>
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 border-4 border-gray-300 border-t-[#1e293b] rounded-full animate-spin"></div>
+          <span className="text-sm font-medium">
+            Inapakia taarifa za washirika...
           </span>
         </div>
-
-        {/* Nafasi */}
-        {/* <div className="md:col-span-2">
-          <span
-            className={`text-xs font-semibold capitalize ${
-              member.role === 'admin'
-                ? 'text-red-600'
-                : member.membership_status === 'inactive'
-                ? 'text-yellow-600'
-                : 'text-green-600'
-            }`}
+      </td>
+    </tr>
+  ) :
+ paginatedMembers.length === 0 ? (
+    <tr>
+      <td
+        colSpan={6}
+        className="px-6 py-10 text-center text-gray-500"
+      >
+        Hakuna washirika waliopatikana
+      </td>
+    </tr>
+  ) : paginatedMembers.map((member) => (
+          <tr
+            key={member.id}
+            className="border-b border-gray-100 hover:bg-gray-50 text-sm"
           >
-            {member.role === 'admin'
-              ? 'Admin'
-              : member.membership_status === 'inactive'
-              ? 'Ameondolewa Ushirika'
-              : member.role || 'hakuna nafasi'}
-          </span>
-        </div> */}
+            {/* Checkbox */}
+            <td className="px-6 py-4">
+              <input
+                type="checkbox"
+                checked={selectedMembers.includes(member.id)}
+                onChange={() => toggleSelect(member.id)}
+                className="w-4 h-4"
+              />
+            </td>
 
-        {/* Simu */}
-        <div className="md:col-span-2 text-gray-700 font-semibold">
-          {member.phone}
-        </div>
+            {/* Name */}
+            <td className="px-6 py-4">
+              <button
+                onClick={() =>
+                  setSelectedMemberId(member.id)
+                }
+                className="font-semibold text-gray-800 hover:text-blue-600"
+              >
+                {member.full_name}
+              </button>
 
-        {/* Makundi */}
-        {/* <div className="md:col-span-2 text-gray-600 capitalize">
-          {member.groups?.length
-            ? member.groups.map((g) => g.name).join(', ')
-            : '—'}
-        </div> */}
+              <div className="text-xs text-gray-500 mt-1">
+                {member.membership_number || '—'}
+              </div>
+            </td>
 
-          {/* Zone */}
-<div className="md:col-span-2 text-gray-600 capitalize">
-  {member.residential_zone || '—'}
+            {/* Phone */}
+            <td className="px-6 py-4 text-gray-700">
+              {member.phone || '—'}
+            </td>
+
+            {/* Zone */}
+            <td className="px-6 py-4 text-gray-600">
+              {member.residential_zone || '—'}
+            </td>
+
+            {/* Date */}
+            <td className="px-6 py-4 text-gray-600">
+              {new Date(
+                member.created_at
+              ).toLocaleDateString()}
+            </td>
+
+            {/* Actions */}
+            <td className="px-6 py-4">
+              <div className="flex gap-2">
+                {member.role === null ||
+                !member.membership_number ? (
+                  <>
+                    <button
+                      onClick={() =>
+                        handleApprove(member.user_id)
+                      }
+                      className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-2 rounded-md text-xs font-medium"
+                    >
+                      Idhinisha
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        Swal.fire({
+                          title: 'Una uhakika?',
+                          text: 'Unataka kumkataa mshirika huyu?',
+                          icon: 'warning',
+                          showCancelButton: true,
+                          confirmButtonText:
+                            'Ndiyo, Kataa',
+                          cancelButtonText: 'Ghairi',
+                          confirmButtonColor:
+                            '#dc2626',
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            handleReject(
+                              member.user_id,
+                              member.role
+                            );
+                          }
+                        });
+                      }}
+                      className="border border-red-600 text-red-700 hover:bg-red-50 px-3 py-2 rounded-md text-xs font-medium"
+                    >
+                      Kataa
+                    </button>
+                  </>
+                ) : (
+                  <span
+                    className={`inline-block px-3 py-2 rounded-md text-xs font-medium text-white ${
+                      member.role === 'admin'
+                        ? 'bg-blue-600'
+                        : 'bg-gray-500'
+                    }`}
+                  >
+                    {member.role === 'admin'
+                      ? 'Admin'
+                      : 'Imeidhinishwa'}
+                  </span>
+                )}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 </div>
 
+{/* Pagination */}
+<div className="flex flex-col md:flex-row justify-between items-center mt-5 gap-4 text-sm">
+  {/* Showing Entries */}
+  <div className="text-gray-600">
+    Showing{' '}
+    <span className="font-semibold">{startIndex + 1}</span> –{' '}
+    <span className="font-semibold">{Math.min(endIndex, totalMembers)}</span> of{' '}
+    <span className="font-semibold">{totalMembers}</span> washirika
+  </div>
 
+  {/* Rows Per Page */}
+  <div className="flex items-center gap-2">
+    <span className="text-gray-600">Rows:</span>
+    <select
+      value={rowsPerPage}
+      onChange={(e) => {
+        setRowsPerPage(Number(e.target.value));
+        setCurrentPage(1);
+      }}
+      className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+    >
+      <option value={10}>10</option>
+      <option value={25}>25</option>
+      <option value={50}>50</option>
+    </select>
+  </div>
 
-        {/* Approve / Reject or Status */}
-        <div className="md:col-span-2 flex flex-wrap gap-2">
-          {member.role === null || !member.membership_number ? (
-            <>
-              <button
-                onClick={() => handleApprove(member.user_id)}
-                className="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
-              >
-                <FaCheck /> Idhinisha
-              </button>
-              <button
-                onClick={() => handleReject(member.user_id, member.role)}
-                className="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
-              >
-                <FaTimes /> Kataa
-              </button>
-            </>
-          ) : (
-            <div
-              className={`text-white px-3 py-1 rounded text-sm flex items-center gap-2 ${
-                member.role === 'admin' ? 'bg-blue-700' : 'bg-gray-400'
-              }`}
-            >
-              <FaCheck /> {member.role === 'admin' ? 'Admin' : 'Imeidhinishwa'}
-            </div>
-          )}
-        </div>
-      </div>
-    ))}
+  {/* Page Buttons */}
+  <div className="flex items-center gap-2 flex-wrap">
+    <button
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+      className="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
+    >
+      Prev
+    </button>
+
+    {/* Dynamic page numbers */}
+    {(() => {
+      const pageNumbers: (number | string)[] = [];
+      const visiblePages = 5; // show current ±2 pages
+      const left = Math.max(1, currentPage - 2);
+      const right = Math.min(totalPages, currentPage + 2);
+
+      if (left > 1) {
+        pageNumbers.push(1);
+        if (left > 2) pageNumbers.push('...');
+      }
+
+      for (let i = left; i <= right; i++) {
+        pageNumbers.push(i);
+      }
+
+      if (right < totalPages) {
+        if (right < totalPages - 1) pageNumbers.push('...');
+        pageNumbers.push(totalPages);
+      }
+
+      return pageNumbers.map((p, idx) =>
+        typeof p === 'number' ? (
+          <button
+            key={idx}
+            onClick={() => setCurrentPage(p)}
+            className={`min-w-[36px] h-9 border rounded-md text-sm font-medium transition ${
+              currentPage === p
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            {p}
+          </button>
+        ) : (
+          <span key={idx} className="px-2">…</span>
+        )
+      );
+    })()}
+
+    <button
+      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+      disabled={currentPage === totalPages}
+      className="px-3 py-1.5 border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
+    >
+      Next
+    </button>
+  </div>
 </div>
     </>
   );

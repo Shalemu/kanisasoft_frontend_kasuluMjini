@@ -348,7 +348,7 @@ const fetchGroups = async () => {
 
 const handleAddLeader = () => {
   if (selectedMembers.length !== 1) {
-    alert('⚠️ Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
+    alert('Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
     return;
   }
 

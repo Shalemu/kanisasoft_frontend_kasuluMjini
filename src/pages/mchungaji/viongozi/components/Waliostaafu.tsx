@@ -9,6 +9,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { apiFetch } from '@/lib/api';
 import { Role } from '@/types/Role';
+import Swal from 'sweetalert2';
 
 interface Leader {
   id: number;
@@ -70,32 +71,72 @@ export default function Waliostaafu() {
   };
 
   const handleRestore = async () => {
-    if (!confirm('Thibitisha kurudisha viongozi waliostaafu?')) return;
+    const result = await Swal.fire({
+  title: 'Thibitisha',
+  text: 'Thibitisha kurudisha viongozi waliostaafu?',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonText: 'Ndiyo, rudisha',
+  cancelButtonText: 'Ghairi',
+  confirmButtonColor: '#f0ce32',
+  cancelButtonColor: '#d33',
+});
+
+if (!result.isConfirmed) return;
     try {
       for (const id of selectedIds) {
         await apiFetch(`/leaders/${id}/restore`, { method: 'POST' });
       }
-      toast.success('✅ Viongozi wamerejeshwa kikamilifu!');
+      Swal.fire({
+  title: 'Imefanikiwa!',
+  text: 'Viongozi wamerejeshwa kikamilifu!',
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
       setSelectedIds([]);
       setSelectAll(false);
       fetchRetired();
     } catch (err) {
-      toast.error('❌ Hitilafu: Hakuna viongozi waliorejeshwa.');
+      toast.error('Hitilafu: Hakuna viongozi waliorejeshwa.');
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Una uhakika unataka kufuta viongozi hawa?')) return;
+ const result = await Swal.fire({
+  title: 'Una uhakika?',
+  text: 'Unataka kufuta viongozi hawa?',
+  icon: 'warning',
+  showCancelButton: true,
+  confirmButtonText: 'Ndiyo, futa',
+  cancelButtonText: 'Ghairi',
+  confirmButtonColor: '#f0ce32',
+  cancelButtonColor: '#d33',
+});
+
+if (!result.isConfirmed) return;
     try {
       for (const id of selectedIds) {
         await apiFetch(`/leaders/${id}`, { method: 'DELETE' });
       }
-      toast.success('🗑️ Viongozi wamefutwa na kurejeshwa kuwa washirika.');
+      Swal.fire({
+  title: 'Imefanikiwa!',
+  text: 'Viongozi wamefutwa na kurejeshwa kuwa washirika.',
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
       setSelectedIds([]);
       setSelectAll(false);
       fetchRetired();
     } catch (err) {
-      toast.error('❌ Hitilafu: Viongozi hawajafutwa.');
+     Swal.fire({
+  title: 'Hitilafu!',
+  text: 'Viongozi hawajafutwa.',
+  icon: 'error',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
     }
   };
 

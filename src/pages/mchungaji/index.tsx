@@ -9,17 +9,19 @@ import { apiFetch } from '@/lib/api';
 
 const tabComponents: Record<string, any> = {
   Mwanzo: dynamic(() => import('./Dashboard')),
-  Washirika: dynamic(() => import('./washirika')),
+  Washirika: dynamic(() => import('./washirika/')),
+ 'Taarifa za Ibada': dynamic(() => import('./taarifa-za-ibada')),
   Wageni: dynamic(() => import('./wageni')),
   Fedha: dynamic(() => import('./fedha')),
   SMS: dynamic(() => import('./SMS')),
   Matukio: dynamic(() => import('./matukio')),
-  Makundi: dynamic(() => import('./makundi')),
+  Makundi: dynamic(() => import('./makundi/')),
   Viongozi: dynamic(() => import('./viongozi')),
 };
 
-export default function MchungajiDashboard() {
-  const [activeTab, setActiveTab] = useState('Mwanzo'); // ✅ corrected default tab
+export default function AdminDashboard() {
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<string>('Mwanzo');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -27,39 +29,39 @@ export default function MchungajiDashboard() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const settingsRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   const navItems = Object.keys(tabComponents);
   const ActiveComponent = tabComponents[activeTab];
 
-  // 🔒 Check role + load saved tab
+
   useEffect(() => {
-    const savedTab = localStorage.getItem('mchungajiActiveTab');
-    if (savedTab && tabComponents[savedTab]) {
-      setActiveTab(savedTab);
-    }
-
     const token = localStorage.getItem('token');
-    const userRaw = localStorage.getItem('user');
-
-    if (!token || !userRaw) {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || !user?.role) {
       router.push('/login');
-      return;
-    }
-
-    const user = JSON.parse(userRaw);
-    const role = user?.role?.toLowerCase();
-
-    if (role !== 'mchungaji') {
-      router.push('/login');
+    } else {
+      setUserRole(user.role);
+      if (user?.role?.toLowerCase() !== 'admin') {
+        router.push('/login');
+      }
     }
   }, []);
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-    localStorage.setItem('mchungajiActiveTab', tab);
-  };
+ 
+  useEffect(() => {
+    const savedTab = localStorage.getItem('activeAdminTab');
+  if (savedTab && tabComponents[savedTab]) {
+    setActiveTab(savedTab);
+  } else {
+    setActiveTab('Mwanzo');
+  }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('activeAdminTab', activeTab);
+  }, [activeTab]);
 
   const handleLogout = async () => {
     if (!confirm('Je, una uhakika unataka kutoka?')) return;
@@ -121,7 +123,7 @@ export default function MchungajiDashboard() {
   return (
     <>
       <Head>
-        <title>{`${activeTab} | Mchungaji`}</title>
+        <title>{`${activeTab} | Admin`}</title>
       </Head>
 
       <div className="min-h-screen bg-[#f2f4f8] text-gray-800">
@@ -145,7 +147,7 @@ export default function MchungajiDashboard() {
               {navItems.map((item) => (
                 <span
                   key={item}
-                  onClick={() => handleTabChange(item)}
+                  onClick={() => setActiveTab(item)}
                   className={`cursor-pointer px-5 py-2 rounded-md transition ${
                     activeTab === item
                       ? 'bg-white text-[#1e293b] font-semibold shadow'
@@ -159,14 +161,14 @@ export default function MchungajiDashboard() {
               {/* Role Badge */}
               <div className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold bg-[#0f172a] shadow-md">
                 <span className="text-lg text-[#f0ce32]">👤</span>
-                <span className="text-[#f0ce32]">Mchungaji</span>
+                <span className="text-[#f0ce32]">Admin</span>
               </div>
 
               {/* Settings */}
               <div className="relative ml-2" ref={settingsRef}>
                 <button
                   onClick={() => setSettingsOpen(!settingsOpen)}
-                  className="px-5 py-2 rounded-md text-white font-semibold bg-[#0f172a] hover:bg-[#334155] transition duration-300 shadow-md"
+                  className="relative px-5 py-2 rounded-md text-white font-semibold bg-[#0f172a] hover:bg-[#334155] transition duration-300 shadow-md"
                 >
                   ⚙️ Mpangilio
                 </button>
@@ -204,7 +206,7 @@ export default function MchungajiDashboard() {
                 <div
                   key={item}
                   onClick={() => {
-                    handleTabChange(item);
+                    setActiveTab(item);
                     setMobileMenuOpen(false);
                   }}
                   className={`cursor-pointer px-4 py-3 rounded-md transition ${
@@ -216,12 +218,11 @@ export default function MchungajiDashboard() {
                   {item}
                 </div>
               ))}
-
-              {/* Role Badge in Mobile */}
-              <div className="mt-3 px-4 py-2 bg-[#0f172a] rounded-md text-white font-semibold shadow-md">
-                Mchungaji
-              </div>
-
+              {userRole && (
+                <div className="mt-3 px-4 py-2 bg-[#0f172a] rounded-md text-white font-semibold shadow-md">
+                  {userRole}
+                </div>
+              )}
               <div className="border-t border-white/20 pt-3 space-y-2">
                 <button
                   onClick={() => {
@@ -256,7 +257,7 @@ export default function MchungajiDashboard() {
               {feedback && <div className="text-red-600 text-sm mb-2">{feedback}</div>}
               <input
                 type="password"
-                placeholder="Neno la siri la sasa"
+                placeholder="Neno la iri la sasa"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 className="w-full border px-4 py-2 mb-3 rounded"
@@ -270,7 +271,7 @@ export default function MchungajiDashboard() {
               />
               <input
                 type="password"
-                placeholder="Thibitisha Neno la siri jipya"
+                placeholder="Thibitisha neno la siri jipya"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full border px-4 py-2 mb-4 rounded"

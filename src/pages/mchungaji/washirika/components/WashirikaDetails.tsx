@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { UserIcon } from '@heroicons/react/24/solid';
 import { apiFetch } from '@/lib/api';
+import Swal from 'sweetalert2';
 
 type Member = {
   id: number;
@@ -38,10 +40,10 @@ type Member = {
 };
 
 export default function WashirikaDetails({
-  memberId,
+   userId, 
   onBack,
 }: {
-  memberId: number;
+  userId: number;
   onBack: () => void;
 }) {
   const [member, setMember] = useState<Member | null>(null);
@@ -49,25 +51,25 @@ export default function WashirikaDetails({
   const [isEditing, setIsEditing] = useState(false);
   const [editValues, setEditValues] = useState<any>({});
 
-  useEffect(() => {
-    if (!memberId) return;
+ useEffect(() => {
+  if (!userId) return;
 
-    const fetchMember = async () => {
-      try {
-        const response = await apiFetch(`/members/${memberId}`);
-        if (response?.member) {
-          setMember(response.member);
-          setEditValues(response.member);
-        }
-      } catch (error) {
-        console.error('Failed to fetch member:', error);
-      } finally {
-        setLoading(false);
+  const fetchMember = async () => {
+    try {
+      const response = await apiFetch(`/members/by-user/${userId}`);
+      if (response?.member) {
+        setMember(response.member);
+        setEditValues(response.member);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch member:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchMember();
-  }, [memberId]);
+  fetchMember();
+}, [userId]);
 
   if (loading) return <p className="text-gray-500 p-8">Inapakia...</p>;
   if (!member) return <p className="text-red-500 p-8">Mshirika hakupatikana.</p>;
@@ -117,29 +119,32 @@ const handleSave = async () => {
       body: JSON.stringify(payload),
     });
 
-    if (data.status === 'success') {
-      setMember(data.member);
+    // ✅ Show success
+    if (data?.status === 'success') {
+      Swal.fire({
+  title: 'Imefanikiwa!',
+  text: data.message || 'Mabadiliko yamehifadhiwa!',
+  icon: 'success',
+  confirmButtonText: 'Sawa',
+  confirmButtonColor: '#f0ce32',
+});
+      setMember(data.member); // update local state with fresh data
       setEditValues(data.member);
       setIsEditing(false);
-      alert(`✅ ${data.message || 'Mabadiliko yamehifadhiwa'}`);
-      return;
+    } else {
+      alert('Something went wrong.');
+      console.log('Unexpected response:', data);
     }
 
-    if (data.status === 'error' && data.errors) {
-      const errors = Object.entries(data.errors)
-        .map(([field, msgs]) =>
-          Array.isArray(msgs) ? `${field}: ${msgs.join(', ')}` : `${field}: ${msgs}`
-        )
-        .join('\n');
-
-      alert(` Validation errors:\n${errors}`);
-      return;
-    }
-
-    alert(` Error: ${data.message || 'Unknown error'}`);
   } catch (err: any) {
+    if (err.response?.status === 422) {
+      const errorData = await err.response.json();
+      console.log("Validation errors:", errorData.errors);
+      alert(JSON.stringify(errorData.errors, null, 2));
+      return;
+    }
+
     alert(`Network / Server error:\n${err.message}`);
-    console.error(err);
   }
 };
 
@@ -213,7 +218,18 @@ const handleSave = async () => {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold text-gray-800">{member.full_name}</h1>
+         <h1 className="text-xl font-bold text-gray-800">
+  {isEditing ? (
+    <input
+      type="text"
+      value={editValues.full_name || ''}
+      onChange={(e) => handleChange('full_name', e.target.value)}
+      className="border p-1 rounded w-full text-xl font-bold"
+    />
+  ) : (
+    member.full_name
+  )}
+</h1>
           <div className="flex gap-2">
             <button
               onClick={onBack}
@@ -234,11 +250,9 @@ const handleSave = async () => {
 
         {/* Top Info */}
         <div className="flex flex-col md:flex-row gap-8 border-b pb-6 mb-8">
-          <img
-            src={`https://api.dicebear.com/6.x/fun-emoji/svg?seed=${member.full_name}`}
-            alt="Avatar"
-            className="w-32 h-32 border rounded shadow"
-          />
+          <div className="w-32 h-32 border rounded shadow flex items-center justify-center bg-gray-100">
+  <UserIcon className="w-16 h-16 text-gray-400" />
+</div>
           <div>
             <span className="text-sm inline-block px-3 py-1 bg-gray-100 text-gray-700 rounded mb-2">
               {member.user?.role || 'Hakuna Nafasi'}
@@ -332,8 +346,8 @@ const handleSave = async () => {
                   <td>{renderField('church_service')}</td>
                 </tr>
                 <tr>
-                  <td className="py-2 font-bold">Muda wa huduma</td>
-                  <td>{renderField('service_duration')}</td>
+                  {/* <td className="py-2 font-bold">Muda wa huduma</td>
+                  <td>{renderField('service_duration')}</td> */}
                 </tr>
               </tbody>
             </table>

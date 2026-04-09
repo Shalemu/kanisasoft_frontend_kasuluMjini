@@ -2,15 +2,29 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from 'recharts';
+
+interface Leader {
+  id: number;
+  full_name: string;
+  membership_number: string;
+}
 
 interface Group {
   id: number;
   name: string;
   zone: string | null;
-  contact: string | null;
-  leader: string | null;
+  leader: Leader | null;
   members: { id: number }[];
 }
 
@@ -26,6 +40,7 @@ export default function RipotiTab() {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
+
       const data = await res.json();
       if (data.status === 'success') {
         setGroups(data.groups);
@@ -39,6 +54,7 @@ export default function RipotiTab() {
     fetchGroups();
   }, []);
 
+  // Prepare bar chart data
   const barChartData = useMemo(() => {
     return groups.map((group) => ({
       name: group.name,
@@ -46,6 +62,7 @@ export default function RipotiTab() {
     }));
   }, [groups]);
 
+  // Prepare pie chart data (groups per zone)
   const pieChartData = useMemo(() => {
     const zoneCount: Record<string, number> = {};
     groups.forEach((g) => {
@@ -58,11 +75,15 @@ export default function RipotiTab() {
   return (
     <div className="p-4 space-y-10">
       <h1 className="text-3xl font-bold text-gray-800 text-center">📊 Ripoti ya Makundi</h1>
-      <p className="text-center text-gray-500 mb-6">Angalia takwimu za wanachama kwa kila kundi na mkoa.</p>
+      <p className="text-center text-gray-500 mb-6">
+        Angalia takwimu za wanachama kwa kila kundi na kanda / zone.
+      </p>
 
       {/* Bar Chart */}
-      <div className="bg-white rounded-xl border shadow-sm p-4">
-        <h2 className="text-lg font-semibold mb-3 text-blue-700">Idadi ya Wanachama kwa Kundi</h2>
+      <div className="bg-white rounded-xl border border-gray-200 shadow p-6">
+        <h2 className="text-lg font-semibold mb-4 text-blue-700">
+          Idadi ya Wanachama kwa Kundi
+        </h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={barChartData}>
             <XAxis dataKey="name" />
@@ -74,8 +95,10 @@ export default function RipotiTab() {
       </div>
 
       {/* Pie Chart */}
-      <div className="bg-white rounded-xl border shadow-sm p-4">
-        <h2 className="text-lg font-semibold mb-3 text-green-700">Makundi kwa Kanda / Zone</h2>
+      <div className="bg-white rounded-xl border border-gray-200 shadow p-6">
+        <h2 className="text-lg font-semibold mb-4 text-green-700">
+          Makundi kwa Kanda / Zone
+        </h2>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
@@ -99,15 +122,23 @@ export default function RipotiTab() {
       {/* Group Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {groups.map((group) => (
-          <div key={group.id} className="bg-white p-4 rounded-xl border shadow hover:shadow-md transition">
-            <h3 className="text-xl font-semibold text-gray-800">{group.name}</h3>
-            <p className="text-sm text-gray-600 mt-1">
+          <div
+            key={group.id}
+            className="bg-white rounded-xl border border-gray-200 shadow p-6 hover:shadow-lg transition-all"
+          >
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">{group.name}</h3>
+
+            <p className="text-sm text-gray-600 mb-1">
               <span className="font-medium">Wanachama:</span> {group.members.length}
             </p>
-            <p className="text-sm text-gray-600">
+
+            <p className="text-sm text-gray-600 mb-1">
               <span className="font-medium">Kiongozi:</span>{' '}
-              {group.leader ? group.leader : <span className="italic text-gray-400">—</span>}
+              {group.leader
+                ? `${group.leader.full_name} (${group.leader.membership_number})`
+                : <span className="italic text-gray-400">—</span>}
             </p>
+
             <p className="text-sm text-gray-600">
               <span className="font-medium">Zone:</span>{' '}
               {group.zone ?? <span className="italic text-gray-400">—</span>}
