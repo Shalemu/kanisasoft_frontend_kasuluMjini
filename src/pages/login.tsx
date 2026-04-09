@@ -10,71 +10,69 @@ import { apiFetch } from '@/lib/api';
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+ const [login, setLogin] = useState('');
+ const [password, setPassword] = useState('');
+ const [loading, setLoading] = useState(false);
 
- const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!email || !password) {
-      toast.warning('Tafadhali jaza taarifa zote.');
+  if (!login || !password) {
+    toast.warning('Tafadhali jaza taarifa zote.');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const data = await apiFetch('/login', {
+      method: 'POST',
+      body: JSON.stringify({ login, password }),
+    });
+
+    const { token, user } = data;
+
+    if (!user?.role) {
+      toast.warning(
+        data.message ||
+          'Asante kwa kujisajili. Maombi yako yanahitaji kuidhinishwa.'
+      );
       return;
     }
 
-    setLoading(true);
-
-    try {
-      // Send login request
-      const data = await apiFetch('/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
-
-      const { token, user } = data;
-
-      // Pending approval
-      if (!user?.role) {
-        toast.warning(
-          data.message ||
-            'Asante kwa kujisajili. Maombi yako yanahitaji kuidhinishwa na uongozi wa kanisa. Tutakujulisha mara tu utakapokubalika.'
-        );
-        return;
-      }
-
-      // Login failure
-      if (!token || !user?.id) {
-        toast.error('Login haikufanikiwa. Hakikisha taarifa zako.');
-        return;
-      }
-
-      // Store token and user info
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('user_id', user.id.toString());
-
-      // Redirect based on role
-      const role = user.role?.toLowerCase().trim();
-      const redirectMap: Record<string, string> = {
-        admin: '/admin',
-        katibu: '/katibu',
-        'mtunza hazina': '/treasurer',
-        mchungaji: '/mchungaji',
-        kiongozi: '/group-leader',
-        mshirika: '/member',
-      };
-
-      const redirect = redirectMap[role || ''];
-      if (redirect) {
-        router.push(redirect);
-      } else {
-        toast.warning(`Hujapangiwa jukumu "${user.role}".`);
-      }
-    } catch (err: any) {
-      toast.error(err.message || 'Tatizo la mfumo. Jaribu tena.');
-    } finally {
-      setLoading(false);
+    if (!token || !user?.id) {
+      toast.error('Login haikufanikiwa.');
+      return;
     }
-  };
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user_id', user.id.toString());
+
+    const role = user.role?.toLowerCase().trim();
+
+    const redirectMap: Record<string, string> = {
+      admin: '/admin',
+      katibu: '/katibu',
+      'mtunza hazina': '/treasurer',
+      mchungaji: '/mchungaji',
+      kiongozi: '/group-leader',
+      mshirika: '/member',
+    };
+
+    const redirect = redirectMap[role || ''];
+
+    if (redirect) {
+      router.push(redirect);
+    } else {
+      toast.warning(`Hujapangiwa jukumu "${user.role}".`);
+    }
+  } catch (err: any) {
+    toast.error(err.message || 'Tatizo la mfumo. Jaribu tena.');
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <>
       <Head>
@@ -98,13 +96,13 @@ export default function LoginPage() {
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <input
-              type="email"
-              placeholder="Email ya mtumiaji"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-[#2d314b] text-white rounded-lg focus:outline-none placeholder-gray-400"
-              required
-            />
+            type="text"
+            placeholder="Email au namba ya simu"
+            value={login}
+            onChange={(e) => setLogin(e.target.value)}
+            className="w-full px-4 py-3 bg-[#2d314b] text-white rounded-lg focus:outline-none placeholder-gray-400"
+            required
+          />
             <input
               type="password"
               placeholder="Neno la siri"

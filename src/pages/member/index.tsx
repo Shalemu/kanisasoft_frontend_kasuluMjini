@@ -6,6 +6,15 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { apiFetch } from '@/lib/api';
+import Swal from 'sweetalert2';
+import {
+  ChevronDown as ChevronDownIcon,
+   Lock as LockIcon,
+  LogOut as LogOutIcon,
+  Menu as MenuIcon,
+  Settings as SettingsIcon,
+  User as UserIcon,
+} from 'lucide-react';
 
 // Dynamically import tab components
 const tabComponents: Record<string, any> = {
@@ -56,16 +65,43 @@ export default function MemberDashboard() {
   }, [activeTab]);
 
   const handleLogout = async () => {
-    if (!confirm('Je, una uhakika unataka kutoka?')) return;
-    try {
-      await apiFetch('/logout', { method: 'POST' });
-    } catch (err) {
-      console.warn('Logout error:', err);
-    } finally {
-      localStorage.clear();
-      router.push('/login');
-    }
-  };
+  const result = await Swal.fire({
+    title: 'Una uhakika?',
+    text: 'Unataka kutoka kwenye mfumo?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ndiyo, toka',
+    cancelButtonText: 'Ghairi',
+    reverseButtons: true,
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await apiFetch('/logout', { method: 'POST' });
+
+    await Swal.fire({
+      title: 'Umetoka',
+      text: 'Umefanikiwa kutoka kwenye mfumo.',
+      icon: 'success',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  } catch (err) {
+    console.warn('Logout error:', err);
+
+    await Swal.fire({
+      title: 'Tahadhari',
+      text: 'Kuna tatizo kidogo, lakini umetolewa kwenye kifaa hiki.',
+      icon: 'info',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  } finally {
+    localStorage.clear();
+    router.push('/login');
+  }
+};
 
   const handlePasswordChange = async () => {
     setFeedback(null);
@@ -120,116 +156,140 @@ export default function MemberDashboard() {
       </Head>
 
       <div className="min-h-screen bg-[#f2f4f8] text-gray-800">
-        {/* Navbar */}
-        <header className="fixed top-0 left-0 w-full bg-[#1e293b] text-white z-50 shadow-md">
-          <div className="flex items-center justify-between px-6 py-5">
-            <div className="flex items-center gap-3 font-bold text-2xl">
-              <Image src="/KANISASOFT1.png" alt="FPCT Logo" width={200} height={200} />
-            </div>
+<header className="fixed top-0 left-0 w-full bg-[#1e293b] text-white z-50 shadow-md">
+  <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-5">
+    
+    {/* Logo */}
+    <div className="flex items-center gap-3 font-bold text-2xl">
+      <Image
+        src="/KANISASOFT1.png"
+        alt="FPCT Logo"
+        width={160}
+        height={50}
+        className="object-contain"
+      />
+    </div>
 
+    {/* Mobile Menu Button */}
+    <button
+      className="md:hidden p-2 rounded-lg hover:bg-slate-700 transition"
+      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+    >
+      <MenuIcon size={24} className="text-white" />
+    </button>
+
+    {/* Desktop Nav */}
+    <nav className="hidden md:flex items-center gap-3">
+      {navItems.map((item) => (
+        <button
+          key={item}
+          onClick={() => setActiveTab(item)}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+            activeTab === item
+              ? 'bg-white text-[#1e293b] shadow font-semibold'
+              : 'text-white hover:bg-[#334155]'
+          }`}
+        >
+          {item}
+        </button>
+      ))}
+
+      {/* Role Badge */}
+      <div className="flex items-center gap-2 px-4 py-2 rounded-md bg-[#0f172a] border border-[#1e293b]">
+        <UserIcon size={18} className="text-[#f0ce32]" />
+        <span className="text-sm font-semibold text-[#f0ce32]">
+          Mshirika
+        </span>
+      </div>
+
+      {/* Settings Dropdown */}
+      <div className="relative ml-2" ref={settingsRef}>
+        <button
+          onClick={() => setSettingsOpen(!settingsOpen)}
+          className="flex items-center gap-2 px-4 py-2 rounded-md bg-[#0f172a] hover:bg-[#334155] text-white font-medium transition"
+        >
+          <SettingsIcon size={18} />
+          <span>Mpangilio</span>
+          <ChevronDownIcon size={16} />
+        </button>
+
+        {settingsOpen && (
+          <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
             <button
-              className="md:hidden text-white text-2xl"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => {
+                setSettingsOpen(false);
+                setShowPasswordModal(true);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-gray-100 transition"
             >
-              ☰
+              <LockIcon size={18} className="text-gray-600" />
+              Badilisha Neno la siri
             </button>
 
-            {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center space-x-3 text-[15px] font-medium">
-              {navItems.map((item) => (
-                <span
-                  key={item}
-                  onClick={() => setActiveTab(item)}
-                  className={`cursor-pointer px-5 py-2 rounded-md transition ${
-                    activeTab === item
-                      ? 'bg-white text-[#1e293b] font-semibold shadow'
-                      : 'text-white hover:bg-slate-700'
-                  }`}
-                >
-                  {item}
-                </span>
-              ))}
+            <div className="border-t border-gray-200" />
 
-              {/* Role Badge */}
-              <div className="flex items-center gap-2 px-5 py-2 rounded-md font-semibold bg-[#0f172a] shadow-md">
-                <span className="text-lg text-[#f0ce32]">👤</span>
-                <span className="text-[#f0ce32]">Mshirika</span>
-              </div>
-
-              <div className="relative ml-4" ref={settingsRef}>
-                <button
-                  onClick={() => setSettingsOpen(!settingsOpen)}
-                  className="px-5 py-2 rounded-md text-white font-semibold bg-[#0f172a] hover:bg-[#334155] transition shadow-md"
-                >
-                  ⚙️ Mpangilio
-                </button>
-
-                {settingsOpen && (
-                  <div className="absolute right-0 mt-2 w-60 bg-white rounded-lg shadow-lg z-50 text-gray-800 text-[15px] overflow-hidden border border-gray-200">
-                    <div className="flex flex-col py-2">
-                      <button
-                        onClick={() => {
-                          setSettingsOpen(false);
-                          setShowPasswordModal(true);
-                        }}
-                        className="px-4 py-3 hover:bg-gray-100 text-left transition"
-                      >
-                        🔐 Badilisha Neno la siri
-                      </button>
-                      <hr className="my-1" />
-                      <button
-                        onClick={handleLogout}
-                        className="px-4 py-3 text-red-600 hover:bg-red-100 text-left font-semibold"
-                      >
-                        🚪 Toka
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </nav>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-100 transition"
+            >
+              <LogOutIcon size={18} />
+              Toka
+            </button>
           </div>
+        )}
+      </div>
+    </nav>
+  </div>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden bg-[#1e293b] text-white px-6 py-4 space-y-2">
-              {navItems.map((item) => (
-                <div
-                  key={item}
-                  onClick={() => {
-                    setActiveTab(item);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`cursor-pointer px-4 py-3 rounded-md transition ${
-                    activeTab === item
-                      ? 'bg-white text-[#1e293b] font-semibold shadow'
-                      : 'hover:bg-slate-700'
-                  }`}
-                >
-                  {item}
-                </div>
-              ))}
-              <div className="border-t border-white/20 pt-3 space-y-2">
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setShowPasswordModal(true);
-                  }}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-600 rounded"
-                >
-                  🔐 Badilisha Neno la siri
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-red-400 hover:bg-red-600 hover:text-white rounded"
-                >
-                  🚪 Toka
-                </button>
-              </div>
-            </div>
-          )}
-        </header>
+  {/* Mobile Menu */}
+  {mobileMenuOpen && (
+    <div className="md:hidden bg-[#1e293b] text-white px-6 py-4 space-y-2 shadow-md">
+      {navItems.map((item) => (
+        <button
+          key={item}
+          onClick={() => {
+            setActiveTab(item);
+            setMobileMenuOpen(false);
+          }}
+          className={`w-full text-left px-4 py-3 rounded-md transition ${
+            activeTab === item
+              ? 'bg-white text-[#1e293b] font-semibold shadow'
+              : 'hover:bg-[#334155]'
+          }`}
+        >
+          {item}
+        </button>
+      ))}
 
+      {/* Role Badge in Mobile */}
+      <div className="mt-3 flex items-center gap-2 px-4 py-2 rounded-md bg-[#0f172a] shadow-md">
+        <UserIcon size={18} className="text-[#f0ce32]" />
+        <span className="text-[#f0ce32]">{'Mshirika'}</span>
+      </div>
+
+      <div className="border-t border-white/20 pt-3 space-y-2">
+        <button
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setShowPasswordModal(true);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-md hover:bg-[#334155]"
+        >
+          <LockIcon size={18} className="text-white" />
+          Badilisha Neno la siri
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-md text-red-500 hover:bg-red-600"
+        >
+          <LogOutIcon size={18} className="text-white" />
+          Toka
+        </button>
+      </div>
+    </div>
+  )}
+</header>
         {/* Main Content */}
         <main className="pt-32 px-6 w-full min-h-screen">
           {ActiveComponent ? <ActiveComponent /> : null}
