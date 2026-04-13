@@ -97,6 +97,19 @@ const [loading, setLoading] = useState(true);
 
   const allSelected = selectedMembers.length === members.length;
   const isAdminSelected = selectedMembers.some(id => members.find(m => m.id === id)?.role === 'admin');
+const roleStyles: Record<string, string> = {
+  admin: 'bg-blue-600',
+  mchungaji: 'bg-green-600',
+  katibu: 'bg-purple-600',
+  mhadhini: 'bg-orange-600',
+};
+
+const roleLabels: Record<string, string> = {
+  admin: 'Admin',
+  mchungaji: 'Mchungaji',
+  katibu: 'Katibu',
+  mhadhini: 'Mhadhini',
+};
 
 
 
@@ -348,7 +361,7 @@ const fetchGroups = async () => {
 
 const handleAddLeader = () => {
   if (selectedMembers.length !== 1) {
-    alert('Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
+    alert('⚠️ Tafadhali chagua mshirika mmoja tu kumfanya kiongozi.');
     return;
   }
 
@@ -868,7 +881,7 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
   <div className="flex items-center justify-between">
     <div>
       <p className="text-sm font-medium text-gray-500">
-        Washirika Waliothibitishwa
+        Washirika Walioidhinishwa
       </p>
       <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
         {loading ? (
@@ -892,7 +905,7 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
   <div className="flex items-center justify-between">
     <div>
       <p className="text-sm font-medium text-gray-500">
-        Washirika Wanaosubiri
+        Washirika Wanaosubiri Kuidhinishwa
       </p>
       <h2 className="text-2xl font-bold text-[#1e293b] mt-1">
         {loading ? (
@@ -1183,17 +1196,13 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
                     </button>
                   </>
                 ) : (
-                  <span
-                    className={`inline-block px-3 py-2 rounded-md text-xs font-medium text-white ${
-                      member.role === 'admin'
-                        ? 'bg-blue-600'
-                        : 'bg-gray-500'
-                    }`}
-                  >
-                    {member.role === 'admin'
-                      ? 'Admin'
-                      : 'Imeidhinishwa'}
-                  </span>
+            <span
+              className={`inline-block px-3 py-2 rounded-md text-xs font-medium text-white ${
+                roleStyles[(member.role || '').toLowerCase()] || 'bg-gray-500'
+              }`}
+            >
+              {roleLabels[(member.role || '').toLowerCase()] || 'Ameidhinishwa'}
+            </span>
                 )}
               </div>
             </td>
@@ -1203,6 +1212,8 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
     </table>
   </div>
 </div>
+
+
 
 {/* Pagination */}
 <div className="flex flex-col md:flex-row justify-between items-center mt-5 gap-4 text-sm">
