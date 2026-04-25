@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[8305],{15502:(_,n,a)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/admin/matukio/components/OrodhaYaMatukio",function(){return a(30815)}])}},_=>{var n=n=>_(_.s=n);_.O(0,[4938,390,5024,815,636,6593,8792],()=>n(15502)),_N_E=_.O()}]);

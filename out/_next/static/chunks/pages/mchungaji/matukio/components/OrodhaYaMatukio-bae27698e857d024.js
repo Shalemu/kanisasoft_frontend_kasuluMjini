@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[4020],{89168:(_,n,u)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/mchungaji/matukio/components/OrodhaYaMatukio",function(){return u(23386)}])}},_=>{var n=n=>_(_.s=n);_.O(0,[4938,390,5024,3386,636,6593,8792],()=>n(89168)),_N_E=_.O()}]);

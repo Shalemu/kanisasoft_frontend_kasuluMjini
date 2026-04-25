@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[816],{72816:(_,n,e)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/treasurer/matukio/components/RipotiTab",function(){return e(74110)}])}},_=>{var n=n=>_(_.s=n);_.O(0,[3656,1544,4110,636,6593,8792],()=>n(72816)),_N_E=_.O()}]);
