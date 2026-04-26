@@ -135,8 +135,8 @@ export default function OngezaWashirika({ onBack }: OngezaWashirikaProps) {
     setLoading(false);
 
     if (result.status === 'error') return alert(result.message);
-    alert('✅ Mshirika ameongezwa!');
-    onBack(); // 👈 use the callback to return
+    alert('Mshirika ameongezwa!');
+    onBack(); 
   };
 
   useEffect(() => {
