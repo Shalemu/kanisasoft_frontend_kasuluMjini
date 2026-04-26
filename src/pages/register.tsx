@@ -64,7 +64,7 @@ export default function RegisterPage() {
     const required = [
       'fullName', 'gender', 'birthDate', 'birthRegion', 'birthDistrict',
       'residentialWard', 'residentialStreet', 'zone', 'maritalStatus',
-      'phone', 'email', 'password', 'passwordConfirmation', 'hasDisability'
+      'phone', 'password', 'passwordConfirmation', 'hasDisability'
     ];
     for (const key of required) {
       if (!form[key as keyof typeof form]) {
@@ -88,6 +88,18 @@ export default function RegisterPage() {
       setActiveTab(0);
       return false;
     }
+
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+  Swal.fire({
+    title: 'Barua pepe si sahihi',
+    text: 'Tafadhali ingiza barua pepe sahihi.',
+    icon: 'error',
+    confirmButtonText: 'Sawa',
+    confirmButtonColor: '#f0ce32'
+  });
+  setActiveTab(0);
+  return false;
+}
     if (!/^\d{10}$/.test(form.phone)) {
       Swal.fire({ title: 'Namba ya simu si sahihi', text: 'Namba ya simu lazima iwe na tarakimu 10 tu.', icon: 'error', confirmButtonText: 'Sawa', confirmButtonColor: '#f0ce32' });
       setActiveTab(0);

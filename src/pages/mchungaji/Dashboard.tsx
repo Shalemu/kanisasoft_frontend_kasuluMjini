@@ -48,7 +48,13 @@ const [groupsCount, setGroupsCount] = useState(0);
 async function fetchGroups() {
   setGroupsLoading(true);
   try {
-    const data = await apiFetch('/groups');
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/groups`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    });
+    const data = await res.json();
     if (data.status === 'success') {
       setGroupsCount(data.groups?.length || 0);
     }
@@ -178,34 +184,23 @@ const [membersLoading, setMembersLoading] = useState(true);
   }, [announcements, showAnnouncements]);
 
   async function fetchMemberInfo() {
-    try {
-      const res = await apiFetch('/mtumiaji/profile');
-      if (res.status === 'success' && res.member) {
-        setMember(res.member);
-      }
-    } catch (err) {
-      console.error('Failed to fetch member info', err);
+    const res = await apiFetch('/mtumiaji/profile');
+    if (res.status === 'success' && res.member) {
+      setMember(res.member);
+      setGroupsCount(res.member.groups?.length || 0);
     }
   }
   async function fetchContributions() {
-    try {
-      const res = await apiFetch('/contributions');
-      if (res.status === 'success') {
-        const userContributions = res.reports.filter((r: any) => r.user_id === member?.user_id);
-        setContributions(userContributions);
-        processChartData(userContributions);
-      }
-    } catch (err) {
-      console.error('Failed to fetch contributions', err);
+    const res = await apiFetch('/contributions');
+    if (res.status === 'success') {
+      const userContributions = res.reports.filter((r: any) => r.user_id === member?.user_id);
+      setContributions(userContributions);
+      processChartData(userContributions);
     }
   }
   async function fetchVisitors() {
-    try {
-      const res = await apiFetch('/guests');
-      if (res.status === 'success') setVisitorCount(res.guests?.length || 0);
-    } catch (err) {
-      console.error('Failed to fetch visitors', err);
-    }
+    const res = await apiFetch('/guests');
+    if (res.status === 'success') setVisitorCount(res.guests?.length || 0);
   }
 
 
@@ -233,12 +228,8 @@ async function fetchMembers() {
 
 
   async function fetchUpcomingEvents() {
-    try {
-      const res = await apiFetch('/events');
-      if (res.status === 'success') setUpcomingEvents(res.events);
-    } catch (err) {
-      console.error('Failed to fetch events', err);
-    }
+    const res = await apiFetch('/events');
+    if (res.status === 'success') setUpcomingEvents(res.events);
   }
 
   if (isLoading) {
