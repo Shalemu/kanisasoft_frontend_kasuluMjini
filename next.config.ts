@@ -4,8 +4,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // output: 'export',       // Enable only for production static export (not for dev)
-  // trailingSlash: true,     // Enable only with output: 'export'
+  output: 'export',
+  trailingSlash: true,
   images: {
     unoptimized: true        // ✅ Required since `next/image` optimization needs Node server
   },
