@@ -317,7 +317,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <Field label="Kanisa Ulipookoka *" name="churchOfConversion" value={form.churchOfConversion} onChange={handleChange} />
+            <Field label="Kanisa Ulipookoka " name="churchOfConversion" value={form.churchOfConversion} onChange={handleChange} />
 
             {/* Baptism date - split into 3 */}
             <div className="col-span-full">
