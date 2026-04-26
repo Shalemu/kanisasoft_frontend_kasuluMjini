@@ -1,0 +1,1 @@
+(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[5756],{24296:(_,n,u)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/mchungaji/matukio/components/MatukioYaliyopita",function(){return u(93714)}])}},_=>{var n=n=>_(_.s=n);_.O(0,[4938,390,5024,3714,636,6593,8792],()=>n(24296)),_N_E=_.O()}]);
