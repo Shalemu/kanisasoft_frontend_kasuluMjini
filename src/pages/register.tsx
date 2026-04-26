@@ -278,7 +278,7 @@ export default function RegisterPage() {
             <Field label="Idadi ya Watoto" name="childrenCount" type="number" value={form.childrenCount} onChange={handleChange} />
             <Field label="Namba ya Simu *" name="phone" type="tel" value={form.phone} onChange={handleChange} />
             <Field label="Namba ya WhatsApp (Hiari)" name="whatsappNumber" type="tel" value={form.whatsappNumber} onChange={handleChange} />
-            <Field label="Barua Pepe *" name="email" type="email" value={form.email} onChange={handleChange} />
+            <Field label="Barua Pepe " name="email" type="email" value={form.email} onChange={handleChange} />
 
             {/* Password with eye toggle */}
             <PasswordField label="Neno la siri *" name="password" value={form.password} onChange={handleChange} />
