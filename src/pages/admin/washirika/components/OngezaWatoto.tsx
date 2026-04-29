@@ -165,7 +165,7 @@ export default function OngezaWatoto({ onBack }: { onBack: () => void }) {
               } text-white shadow-md`}
               disabled={loading}
             >
-              {loading ? 'Inahifadhi...' : 'Hifadhi Mtoto'}
+              {loading ? 'Inahifadhi...' : 'ONGEZA MTOTO'}
             </button>
           </form>
         </div>

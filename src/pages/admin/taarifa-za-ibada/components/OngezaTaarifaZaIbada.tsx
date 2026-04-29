@@ -27,7 +27,7 @@ export default function OngezaTaarifaZaIbada() {
     'Ibada ya Neno la Mungu',
   ];
 
-  // Auto-calculate total attendance
+  
   useEffect(() => {
     setFormData(prev => ({
       ...prev,
@@ -104,7 +104,7 @@ export default function OngezaTaarifaZaIbada() {
       
         {/* Service Type */}
       <div className="flex flex-col">
-        <label className="mb-1 font-medium text-gray-700">Aina ya Huduma</label>
+        <label className="mb-1 font-medium text-gray-700">Aina za Ibada</label>
         <input
           type="text"
           required
@@ -112,7 +112,7 @@ export default function OngezaTaarifaZaIbada() {
           onChange={e =>
             setFormData({ ...formData, service_name: e.target.value })
           }
-          placeholder="Andika aina ya huduma"
+          placeholder="Andika aina ya ibada"
           className="border border-gray-300 px-4 py-3 rounded-md"
         />
       </div>
@@ -241,7 +241,7 @@ export default function OngezaTaarifaZaIbada() {
           <textarea
             value={formData.message}
             onChange={e => setFormData({ ...formData, message: e.target.value })}
-            placeholder="Maelezo yoyote ya ziada..."
+            placeholder="Jaza Maelezo ya ziada kama yapo..."
             className="border border-gray-300 px-4 py-3 rounded-md"
           />
         </div>
