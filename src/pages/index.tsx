@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarDays, faShieldHalved, faChartLine } from '@fortawesome/free-solid-svg-icons';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
- import { User } from "lucide-react"; 
+import { User } from "lucide-react"; 
 
 
 type Feature = {
