@@ -101,29 +101,24 @@ export default function OngezaTaarifaZaIbada() {
           />
         </div>
 
+      
         {/* Service Type */}
-        <div className="flex flex-col">
-          <label className="mb-1 font-medium text-gray-700">Aina ya Huduma</label>
-          <select
-            required
-            value={formData.service_name}
-            onChange={e => setFormData({ ...formData, service_name: e.target.value })}
-            className="border border-gray-300 px-4 py-3 rounded-md"
-          >
-            <option value="" disabled>
-              Chagua Huduma
-            </option>
-            {serviceTypes.map(type => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-
+      <div className="flex flex-col">
+        <label className="mb-1 font-medium text-gray-700">Aina ya Huduma</label>
+        <input
+          type="text"
+          required
+          value={formData.service_name}
+          onChange={e =>
+            setFormData({ ...formData, service_name: e.target.value })
+          }
+          placeholder="Andika aina ya huduma"
+          className="border border-gray-300 px-4 py-3 rounded-md"
+        />
+      </div>
         {/* Preacher */}
         <div className="flex flex-col">
-          <label className="mb-1 font-medium text-gray-700">Mhubiri / Kiongozi</label>
+          <label className="mb-1 font-medium text-gray-700">Mhubiri</label>
           <input
             type="text"
             required
@@ -159,10 +154,20 @@ export default function OngezaTaarifaZaIbada() {
             className="border border-gray-300 px-4 py-3 rounded-md"
           />
         </div>
+        <div className="flex flex-col">
+          <label className="mb-1 font-medium text-gray-700">Kiongozi Wa Zamu</label>
+          <input
+            type="text"
+            placeholder="Weka Jina la Kiongozi wa Zamu"
+            value={formData.leaders_on_duty}
+            onChange={e => setFormData({ ...formData, leaders_on_duty: e.target.value })}
+            className="border border-gray-300 px-4 py-3 rounded-md"
+          />
+        </div>
 
         {/* Attendance: Children */}
         <div className="flex flex-col">
-          <label className="mb-1 font-medium text-gray-700">Watoto</label>
+          <label className="mb-1 font-medium text-gray-700">Watoto Waliohudhuria</label>
           <input
             type="number"
             min={0}
@@ -176,7 +181,7 @@ export default function OngezaTaarifaZaIbada() {
 
         {/* Attendance: Women */}
         <div className="flex flex-col">
-          <label className="mb-1 font-medium text-gray-700">Wanawake</label>
+          <label className="mb-1 font-medium text-gray-700">Wanawake Waliohudhuria</label>
           <input
             type="number"
             min={0}
@@ -190,7 +195,7 @@ export default function OngezaTaarifaZaIbada() {
 
         {/* Attendance: Men */}
         <div className="flex flex-col">
-          <label className="mb-1 font-medium text-gray-700">Wanaume</label>
+          <label className="mb-1 font-medium text-gray-700">Wanaume Waliohudhuria</label>
           <input
             type="number"
             min={0}
@@ -217,7 +222,7 @@ export default function OngezaTaarifaZaIbada() {
 
         {/* Total Offerings */}
         <div className="flex flex-col flex-1">
-          <label className="mb-1 font-medium text-gray-700">Jumla ya Sadaka (Tsh)</label>
+          <label className="mb-1 font-medium text-gray-700">Jumla ya Sadaka Zilizotolewa(Tsh)</label>
           <input
             type="number"
             min={0}
@@ -232,7 +237,7 @@ export default function OngezaTaarifaZaIbada() {
 
         {/* Message */}
         <div className="flex flex-col md:col-span-2">
-          <label className="mb-1 font-medium text-gray-700">Ujumbe / Maelezo</label>
+          <label className="mb-1 font-medium text-gray-700">Maelezo ya ziada kama yapo</label>
           <textarea
             value={formData.message}
             onChange={e => setFormData({ ...formData, message: e.target.value })}
