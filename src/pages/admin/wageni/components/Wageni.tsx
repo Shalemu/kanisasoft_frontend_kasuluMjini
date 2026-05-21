@@ -1,6 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { FaSearch, FaFilter, FaUserPlus, FaTrash, FaFilePdf, FaFileExcel, FaUpload } from 'react-icons/fa';
+import {
+  FaSearch,
+  FaFilter,
+  FaUserPlus,
+  FaTrash,
+  FaFilePdf,
+  FaFileExcel,
+  FaUpload,
+  FaEnvelope,
+  FaUsers
+} from 'react-icons/fa';
 import { apiFetch } from '@/lib/api';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -11,6 +21,7 @@ interface Visitor {
   id?: number;
   full_name: string;
   phone: string;
+  email?: string;
   church_origin: string;
   visit_date: string;
   prayer: boolean;
@@ -30,6 +41,7 @@ export default function WageniTab() {
   const [selectAll, setSelectAll] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [uploading, setUploading] = useState(false);
+  
   const [form, setForm] = useState<Visitor>({
     full_name: '',
     phone: '',
@@ -41,6 +53,10 @@ export default function WageniTab() {
     travel: false,
     other: '',
   });
+
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageText, setMessageText] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     fetchVisitors();
@@ -125,6 +141,70 @@ export default function WageniTab() {
     }
     setSelectAll(!selectAll);
   };
+
+  const handleSendMessage = async () => {
+  if (!messageText.trim()) {
+    alert('Andika ujumbe kwanza.');
+    return;
+  }
+
+  setSendingMessage(true);
+
+  try {
+    let success = 0;
+    let failed = 0;
+
+    const selectedVisitors = visitors.filter((v) =>
+      selectedIds.includes(v.id!)
+    );
+
+    for (const visitor of selectedVisitors) {
+      try {
+      //   const personalizedMessage = `
+      //   Bwana Yesu asifiwe ${visitor.full_name},
+
+      //  ${messageText}
+
+      //   FPCT KASULU MJINI
+      //   `.trim();
+      const personalizedMessage = messageText.trim();
+      
+
+        const response = await apiFetch('/send-sms', {
+          method: 'POST',
+          body: JSON.stringify({
+            phone: visitor.phone,
+            email: visitor.email || '',
+            name: visitor.full_name,
+            message: personalizedMessage,
+            send_email: !!visitor.email,
+          }),
+        });
+
+        if (response.status === 'success') {
+          success++;
+        } else {
+          failed++;
+        }
+      } catch (err) {
+        console.error('SMS Error:', err);
+        failed++;
+      }
+    }
+
+    alert(
+      `${success} ujumbe umetumwa successfully.${failed ? ` ${failed} imeshindikana.` : ''}`
+    );
+
+    setShowMessageModal(false);
+    setMessageText('');
+  } catch (err) {
+    console.error(err);
+    alert('Hitilafu wakati wa kutuma ujumbe.');
+  } finally {
+    setSendingMessage(false);
+  }
+};
 
   // --- Sababu formatting helpers ---
   function sababuToString(v: Visitor) {
@@ -250,7 +330,7 @@ export default function WageniTab() {
           }
         }
         fetchVisitors();
-        alert(`✅ ${imported} wageni wameongezwa! ${failed ? failed + ' walishindwa.' : ''}`);
+        alert(`${imported} wageni wameongezwa! ${failed ? failed + ' walishindwa.' : ''}`);
       } else {
         alert('Tafadhali chagua faili la Excel (.xlsx/.xls).');
       }
@@ -276,118 +356,231 @@ export default function WageniTab() {
   };
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm">
-      {/* Button Group */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
-        <h2 className="text-lg font-semibold text-gray-800">👥 Wageni Waliohudhuria</h2>
+  <div className="bg-white border border-gray-100 rounded-xl shadow-sm">
+    
+    {/* Header */}
+    <div className="border-b border-gray-100 px-4 md:px-6 py-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+        {/* Title */}
+        <div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+              <FaUsers className="text-blue-600 text-sm" />
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">
+                Wageni Waliohudhuria
+              </h2>
+
+              <p className="text-sm text-gray-500">
+                Jumla ya wageni: {filtered.length}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Buttons */}
         <div className="flex flex-wrap gap-2">
-          <button onClick={handleDelete} disabled={selectedIds.length === 0}
-            className="flex items-center gap-1 bg-red-600 text-white px-2 py-1.5 rounded-[0.6rem] text-xs font-medium hover:bg-red-700 shadow-sm transition-all duration-100"
-            style={{ minWidth: 60 }}>
-            <FaTrash className="text-sm" /> Futa
+
+          <button
+            onClick={() => setShowMessageModal(true)}
+            disabled={selectedIds.length === 0}
+            className="flex items-center gap-2 bg-amber-500 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <FaEnvelope className="text-[11px]" />
+            Tuma Ujumbe
           </button>
-          <button onClick={exportToExcel}
-            className="flex items-center gap-1 bg-green-600 text-white px-2 py-1.5 rounded-[0.6rem] text-xs font-medium hover:bg-green-700 shadow-sm transition-all duration-100"
-            style={{ minWidth: 60 }}>
-            <FaFileExcel className="text-sm" /> Excel
+
+          <button
+            onClick={handleDelete}
+            disabled={selectedIds.length === 0}
+            className="flex items-center gap-2 bg-red-500 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            <FaTrash className="text-[11px]" />
+            Futa
           </button>
-          <button onClick={exportToPDF}
-            className="flex items-center gap-1 bg-gray-800 text-white px-2 py-1.5 rounded-[0.6rem] text-xs font-medium hover:bg-gray-900 shadow-sm transition-all duration-100"
-            style={{ minWidth: 60 }}>
-            <FaFilePdf className="text-sm" /> PDF
+
+          <button
+            onClick={exportToExcel}
+            className="flex items-center gap-2 bg-emerald-500 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-emerald-600 transition"
+          >
+            <FaFileExcel className="text-[11px]" />
+            Excel
           </button>
-          <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-1 bg-blue-600 text-white px-2 py-1.5 rounded-[0.6rem] text-xs font-medium hover:bg-blue-700 shadow-sm transition-all duration-100"
-            style={{ minWidth: 60 }}>
-            <FaUserPlus className="text-sm" /> Ongeza Mgeni
+
+          <button
+            onClick={exportToPDF}
+            className="flex items-center gap-2 bg-gray-800 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-black transition"
+          >
+            <FaFilePdf className="text-[11px]" />
+            PDF
           </button>
-          <label className="flex items-center gap-1 bg-purple-600 hover:bg-purple-700 text-white px-2 py-1.5 rounded-[0.6rem] text-xs font-medium shadow-sm cursor-pointer transition-all duration-100"
-            style={{ minWidth: 60 }}>
-            <FaUpload className="text-sm" /> Pakia Excel
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-blue-700 transition"
+          >
+            <FaUserPlus className="text-[11px]" />
+            Ongeza
+          </button>
+
+          <label className="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white px-3 py-2 rounded-md text-xs font-medium cursor-pointer transition">
+            <FaUpload className="text-[11px]" />
+            Pakia Excel
+
             <input
               type="file"
               accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-              style={{ display: 'none' }}
+              className="hidden"
               disabled={uploading}
               onChange={handleFileUpload}
             />
           </label>
-          <button onClick={downloadTemplate}
-            className="flex items-center gap-1 bg-indigo-600 text-white px-2 py-1.5 rounded-[0.6rem] text-xs font-medium hover:bg-indigo-700 shadow-sm transition-all duration-100"
-            style={{ minWidth: 60 }}>
-            Pakua Template
+
+          <button
+            onClick={downloadTemplate}
+            className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-indigo-700 transition"
+          >
+            <FaFileExcel className="text-[11px]" />
+            Template
           </button>
+
         </div>
       </div>
+    </div>
 
-      {/* Search & Filter */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex items-center border px-3 py-2 rounded bg-white w-full md:w-1/2 shadow-sm">
-          <FaSearch className="text-gray-400 mr-2" />
+    {/* Search & Filter */}
+    <div className="px-4 md:px-6 py-4">
+      <div className="flex flex-col md:flex-row gap-3">
+
+        <div className="flex items-center border border-gray-200 px-3 py-2.5 rounded-lg bg-gray-50 w-full md:w-1/2 focus-within:ring-2 focus-within:ring-blue-100">
+          <FaSearch className="text-gray-400 mr-2 text-sm" />
+
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tafuta jina la mgeni..."
-            className="w-full outline-none text-sm"
+            className="w-full bg-transparent outline-none text-sm"
           />
         </div>
-        <div className="flex items-center border px-3 py-2 rounded bg-white w-full md:w-1/3 shadow-sm">
-          <FaFilter className="text-gray-400 mr-2" />
+
+        <div className="flex items-center border border-gray-200 px-3 py-2.5 rounded-lg bg-gray-50 w-full md:w-72 focus-within:ring-2 focus-within:ring-blue-100">
+          <FaFilter className="text-gray-400 mr-2 text-sm" />
+
           <select
             value={selectedReason}
             onChange={(e) => setSelectedReason(e.target.value)}
             className="w-full bg-transparent outline-none text-sm"
           >
             {reasons.map((r, i) => (
-              <option key={i} value={r}>{r}</option>
+              <option key={i} value={r}>
+                {r}
+              </option>
             ))}
           </select>
         </div>
-      </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="bg-blue-50 text-gray-700">
-            <tr>
-              <th className="text-left px-4 py-3">
-                <input type="checkbox" checked={selectAll} onChange={handleSelectAll} />
-              </th>
-              <th className="text-left px-4 py-3">Tarehe</th>
-              <th className="text-left px-4 py-3">Jina Kamili</th>
-              <th className="text-left px-4 py-3">Simu</th>
-              <th className="text-left px-4 py-3">Kanisa</th>
-              <th className="text-left px-4 py-3">Sababu</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {filtered.map((v) => (
-              <tr key={v.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <input type="checkbox" checked={selectedIds.includes(v.id!)} onChange={() => toggleSelect(v.id!)} />
-                </td>
-                <td className="px-4 py-3">{v.visit_date}</td>
-                <td className="px-4 py-3">{v.full_name}</td>
-                <td className="px-4 py-3">{v.phone}</td>
-                <td className="px-4 py-3">{v.church_origin}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    {v.prayer && <ReasonBadge label="Maombi" />}
-                    {v.salvation && <ReasonBadge label="Kuokoka" />}
-                    {v.joining && <ReasonBadge label="Kujiunga na Ushirika" />}
-                    {v.travel && <ReasonBadge label="Safari" />}
-                    {v.other && <ReasonBadge label={v.other} />}
-                    {!v.prayer && !v.salvation && !v.joining && !v.travel && !v.other && (
-                      <span className="text-gray-400 italic">Hakuna sababu</span>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
+    </div>
+
+    {/* Table */}
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm">
+
+        <thead className="bg-gray-50 border-y border-gray-100 text-gray-600">
+          <tr>
+            <th className="px-4 py-3 text-left">
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="rounded border-gray-300"
+              />
+            </th>
+
+            <th className="px-4 py-3 text-left font-semibold">Tarehe</th>
+            <th className="px-4 py-3 text-left font-semibold">Jina Kamili</th>
+            <th className="px-4 py-3 text-left font-semibold">Simu</th>
+            <th className="px-4 py-3 text-left font-semibold">Kanisa</th>
+            <th className="px-4 py-3 text-left font-semibold">Sababu</th>
+          </tr>
+        </thead>
+
+        <tbody className="divide-y divide-gray-100">
+
+          {filtered.map((v) => (
+            <tr
+              key={v.id}
+              className="hover:bg-gray-50 transition"
+            >
+              <td className="px-4 py-4">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(v.id!)}
+                  onChange={() => toggleSelect(v.id!)}
+                  className="rounded border-gray-300"
+                />
+              </td>
+
+              <td className="px-4 py-4 text-gray-600 whitespace-nowrap">
+                {v.visit_date}
+              </td>
+
+              <td className="px-4 py-4 font-medium text-gray-800 whitespace-nowrap">
+                {v.full_name}
+              </td>
+
+              <td className="px-4 py-4 text-gray-600 whitespace-nowrap">
+                {v.phone}
+              </td>
+
+              <td className="px-4 py-4 text-gray-600">
+                {v.church_origin}
+              </td>
+
+              <td className="px-4 py-4">
+                <div className="flex flex-wrap gap-2">
+
+                  {v.prayer && (
+                    <ReasonBadge label="Maombi" />
+                  )}
+
+                  {v.salvation && (
+                    <ReasonBadge label="Kuokoka" />
+                  )}
+
+                  {v.joining && (
+                    <ReasonBadge label="Kujiunga" />
+                  )}
+
+                  {v.travel && (
+                    <ReasonBadge label="Safari" />
+                  )}
+
+                  {v.other && (
+                    <ReasonBadge label={v.other} />
+                  )}
+
+                  {!v.prayer &&
+                    !v.salvation &&
+                    !v.joining &&
+                    !v.travel &&
+                    !v.other && (
+                      <span className="text-gray-400 italic text-xs">
+                        Hakuna sababu
+                      </span>
+                    )}
+                </div>
+              </td>
+            </tr>
+          ))}
+
+        </tbody>
+      </table>
+    </div>
 
       {/* Modal */}
       {showModal && (
@@ -424,6 +617,46 @@ export default function WageniTab() {
           </div>
         </div>
       )}
+
+
+      {showMessageModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="bg-white w-full max-w-lg p-6 rounded-xl shadow-lg">
+      <h3 className="text-lg font-semibold mb-4">
+        Tuma Ujumbe kwa Wageni Walioteuliwa
+      </h3>
+
+      <p className="text-sm text-gray-600 mb-3">
+        Wageni waliochaguliwa: {selectedIds.length}
+      </p>
+
+      <textarea
+        value={messageText}
+        onChange={(e) => setMessageText(e.target.value)}
+        placeholder="Andika ujumbe hapa..."
+        rows={6}
+        className="w-full border rounded-lg p-3 outline-none focus:ring-2 focus:ring-yellow-500"
+      />
+
+      <div className="flex justify-end gap-3 mt-5">
+        <button
+          onClick={() => setShowMessageModal(false)}
+          className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200"
+        >
+          Ghairi
+        </button>
+
+        <button
+          onClick={handleSendMessage}
+          disabled={sendingMessage}
+          className="px-4 py-2 rounded bg-yellow-600 text-white hover:bg-yellow-700"
+        >
+          {sendingMessage ? 'Inatuma...' : 'Tuma Ujumbe'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

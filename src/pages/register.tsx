@@ -135,7 +135,7 @@ export default function RegisterPage() {
     if (activeTab < tabTitles.length - 1) setActiveTab(activeTab + 1);
   };
 
-  // ── Submit ──────────────────────────────────────────────────
+  // ── Submit
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validatePersonalInfo()) return;
@@ -260,7 +260,7 @@ export default function RegisterPage() {
 
             {/* Zone - dropdown with new values */}
             <Select label="Mtaa *" name="zone" value={form.zone} onChange={handleChange}
-              options={['MURUBOMBO', 'MURUSI B', 'KIGANAMO', 'MURUSI A', 'KUMUNYIKA B', 'KAGUNGA C', 'KUMUNYIKA A', 'KAGANGA B', 'MURUBONA A', 'KAGUNGA A']}
+              options={['MURUBOMBO', 'MURUSI B', 'KIGANAMO', 'MURUSI A', 'KUMUNYIKA B', 'KAGUNGA C', 'KUMUNYIKA A', 'KAGANGA B', 'MURUBONA A', 'KAGUNGA A', 'MURUBONA B']}
             />
 
             <Select label="Hali ya Ndoa *" name="maritalStatus" value={form.maritalStatus} onChange={handleChange}
@@ -386,9 +386,9 @@ export default function RegisterPage() {
             {form.livesAlone === 'hapana' && (
               <>
                 <Select label="Nafasi yako katika Familia" name="familyRole" value={form.familyRole} onChange={handleChange}
-                  options={['Mzazi', 'Mtoto', 'Ndugu']} />
+                  options={['Mzazi','Mume', 'Mke', 'Mtoto',  'Ndugu']} />
                 <Select label="Unayoishi Nao" name="liveWithWho" value={form.liveWithWho} onChange={handleChange}
-                  options={['Wazazi', 'Ndugu', 'Marafiki', 'Wengine']} />
+                  options={['Wazazi', 'Mtoto/Watoto', 'Mume', 'Mke', 'Ndugu', 'Marafiki',  'Wengine']} />
               </>
             )}
             <Field label="Jina la Mtu wako wa Karibu" name="nextOfKin" value={form.nextOfKin} onChange={handleChange} />

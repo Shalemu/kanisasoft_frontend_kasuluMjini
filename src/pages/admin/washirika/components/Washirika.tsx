@@ -1067,7 +1067,7 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
           </th>
 
           <th className="px-6 py-4 text-left">
-            Zone
+            Mtaa
           </th>
 
           <th className="px-6 py-4 text-left">

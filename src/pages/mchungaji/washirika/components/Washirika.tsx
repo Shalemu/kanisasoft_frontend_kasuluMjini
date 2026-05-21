@@ -270,7 +270,7 @@ const fetchGroups = async () => {
     'Jina Kamili': m.full_name || '—',
     'Namba ya Ushirika': m.membership_number || '—',
     'Namba ya Simu': m.phone || '—',
-    'Zone': m.residential_zone || '—',
+    'Mtaa': m.residential_zone || '—',
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -319,7 +319,7 @@ const fetchGroups = async () => {
       'Jina Kamili',
       'Namba ya Ushirika',
       'Namba ya Simu',
-      'Zone',
+      'Mtaa',
     ]],
     body: tableData,
     styles: {
@@ -340,7 +340,7 @@ const fetchGroups = async () => {
       1: { cellWidth: 60 },  // Jina
       2: { cellWidth: 40 },  // Membership No
       3: { cellWidth: 40 },  // Simu
-      4: { cellWidth: 50 },  // Zone
+      4: { cellWidth: 50 },  // Mtaa
     },
     margin: { left: 10, right: 10 },
     didDrawPage: () => {
@@ -1067,7 +1067,7 @@ const paginatedMembers = filteredMembers.slice(startIndex, endIndex);
           </th>
 
           <th className="px-6 py-4 text-left">
-            Zone
+            Mtaa
           </th>
 
           <th className="px-6 py-4 text-left">
