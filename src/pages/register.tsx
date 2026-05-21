@@ -260,7 +260,7 @@ export default function RegisterPage() {
 
             {/* Zone - dropdown with new values */}
             <Select label="Mtaa *" name="zone" value={form.zone} onChange={handleChange}
-              options={['MURUBOMBO', 'MURUSI B', 'KIGANAMO', 'MURUSI A', 'KUMUNYIKA B', 'KAGUNGA C', 'KUMUNYIKA A', 'KAGANGA B', 'MURUBONA A', 'KAGUNGA A', 'MURUBONA B']}
+              options={['MURUBOMBO', 'MURUSI B', 'KIGANAMO', 'MURUSI A', 'KUMUNYIKA B', 'KAGUNGA C', 'KUMUNYIKA A', 'KAGUNGA B', 'MURUBONA A', 'KAGUNGA A', 'MURUBONA B']}
             />
 
             <Select label="Hali ya Ndoa *" name="maritalStatus" value={form.maritalStatus} onChange={handleChange}
