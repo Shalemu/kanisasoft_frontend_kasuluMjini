@@ -13,61 +13,36 @@ export type Member = {
   membership_status: string;
   created_at: string;
 
-  /* =========================
-   * PERSONAL INFO
-   * ========================= */
-
   gender?: 'M' | 'F';
-
   marital_status?: string;
   marriage_type?: string;
   spouse_name?: string;
 
   birth_date?: string;
-
   birth_place?: string;
-
   birth_region?: string;
   birth_district?: string;
   birth_ward?: string;
   birth_street?: string;
 
-  /* =========================
-   * RESIDENCE
-   * ========================= */
-
   residential_zone?: string;
   residential_ward?: string;
   residential_street?: string;
-
-  residence?: string; // 👈 from payload
-
-  /* =========================
-   * FAMILY
-   * ========================= */
+  residence?: string;
 
   number_of_children?: number;
-  lives_alone?: 0 | 1;
-  lives_with?: string;
 
+  lives_alone?: boolean;
+  lives_with?: string;
   family_role?: string;
   live_with_who?: string;
   next_of_kin?: string;
   next_of_kin_phone?: string;
 
-  /* =========================
-   * CONTACT
-   * ========================= */
-
   whatsapp_number?: string;
-
-  /* =========================
-   * FAITH INFO
-   * ========================= */
 
   date_of_conversion?: string;
   church_of_conversion?: string;
-
   conversion_year?: number;
   conversion_month?: number;
   conversion_day?: number;
@@ -76,25 +51,18 @@ export type Member = {
   baptism_place?: string;
   baptizer_name?: string;
   baptizer_title?: string;
-
   baptism_year?: number;
   baptism_month?: number;
   baptism_day?: number;
 
   church_service?: string;
   service_duration?: string;
-
-  participates_communion?: 0 | 1;
+  participates_communion?: boolean;
 
   previous_church?: string;
-
   previous_church_status?: string;
   tangu_lini?: string;
   kanisa_ulipotoka?: string;
-
-  /* =========================
-   * EDUCATION & WORK
-   * ========================= */
 
   education_level?: string;
   profession?: string;
@@ -102,16 +70,8 @@ export type Member = {
   work_place?: string;
   work_contact?: string;
 
-  /* =========================
-   * DISABILITY
-   * ========================= */
-
-  has_disability?: 0 | 1;
+  has_disability?: boolean;
   disability_description?: string;
-
-  /* =========================
-   * SYSTEM
-   * ========================= */
 
   is_authorized?: 0 | 1;
   membership_number?: string;
@@ -406,16 +366,14 @@ const handleSave = async () => {
         <td>{member.membership_number ?? '-'}</td>
       </tr>
 
-      <tr>
-        <td className="py-2 font-bold">Hali ya Idhini</td>
-        <td>
-          {member.is_authorized == 1
-            ? 'Imeidhinishwa'
-            : member.is_authorized == 0
-            ? 'Haijaidhinishwa'
-            : '-'}
-        </td>
-      </tr>
+    <tr>
+      <td className="py-2 font-bold">Hali ya Idhini</td>
+      <td>
+        {member.membership_number
+          ? 'Ameidhinishwa'
+          : 'Haijaidhinishwa'}
+      </td>
+    </tr>
 
       <tr>
         <td className="py-2 font-bold">Jinsia</td>
@@ -458,12 +416,6 @@ const handleSave = async () => {
             member.birth_street
           ].filter(Boolean).join(' / ') || '-'}
         </td>
-      </tr>
-
-      {/* RESIDENCE */}
-      <tr>
-        <td className="py-2 font-bold">Mkoa wa Makazi</td>
-        <td>{member.residential_zone ?? '-'}</td>
       </tr>
 
       <tr>
@@ -514,52 +466,16 @@ const handleSave = async () => {
       </tr>
 
       {/* DISABILITY */}
-      <tr>
-        <td className="py-2 font-bold">Ulemavu</td>
-        <td>
-          {member.has_disability == 1
-            ? member.disability_description ?? 'Ndiyo'
-            : 'Hapana'}
-        </td>
-      </tr>
+    <tr>
+      <td className="py-2 font-bold">Ulemavu</td>
+      <td>
+        {member.has_disability
+          ? member.disability_description || 'Ndiyo'
+          : 'Hapana'}
+      </td>
+    </tr>
 
-      {/* FAITH */}
-      <tr>
-        <td className="py-2 font-bold">Siku ya Uongofu</td>
-        <td>
-          {[
-            member.conversion_year,
-            member.conversion_month,
-            member.conversion_day
-          ].filter(Boolean).join('-') || member.date_of_conversion || '-'}
-        </td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Kanisa la Uongofu</td>
-        <td>{member.church_of_conversion ?? '-'}</td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Huduma ya Kanisa</td>
-        <td>{member.church_service ?? '-'}</td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Muda wa Huduma</td>
-        <td>{member.service_duration ?? '-'}</td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Komunyo</td>
-        <td>
-          {member.participates_communion == 1
-            ? 'Ndiyo'
-            : member.participates_communion == 0
-            ? 'Hapana'
-            : '-'}
-        </td>
-      </tr>
+     
 
       {/* STATUS */}
       <tr>
@@ -632,15 +548,11 @@ const handleSave = async () => {
         <td>{member.church_service ?? '-'}</td>
       </tr>
 
-      <tr>
-        <td className="py-2 font-bold">Muda wa huduma</td>
-        <td>{member.service_duration ?? '-'}</td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Anashiriki Komunyo</td>
-        <td>{member.participates_communion == 1 ? 'Ndiyo' : 'Hapana'}</td>
-      </tr>
+  
+    <tr>
+  <td className="py-2 font-bold"> Anashiriki Meza ya Bwana</td>
+    <td>{member.participates_communion ? 'Ndiyo' : 'Hapana'}</td>
+  </tr>
 
     </tbody>
   </table>
@@ -679,28 +591,6 @@ const handleSave = async () => {
         <td className="py-2 font-bold">Mawasiliano ya Kazi</td>
         <td>{member.work_contact ?? '-'}</td>
       </tr>
-
-      {/* EXTRA (from your payload) */}
-      <tr>
-        <td className="py-2 font-bold">Jukumu la Familia</td>
-        <td>{member.family_role ?? '-'}</td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Anaishi na Nani</td>
-        <td>{member.live_with_who ?? '-'}</td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Ndugu wa Karibu</td>
-        <td>{member.next_of_kin ?? '-'}</td>
-      </tr>
-
-      <tr>
-        <td className="py-2 font-bold">Simu ya Ndugu wa Karibu</td>
-        <td>{member.next_of_kin_phone ?? '-'}</td>
-      </tr>
-
     </tbody>
   </table>
 </div>
@@ -723,20 +613,20 @@ const handleSave = async () => {
         <td>{member.residential_zone ?? '-'}</td>
       </tr>
 
-      <tr>
-        <td className="py-2 font-bold">Anaishi peke yake?</td>
-        <td>
-          {member.lives_alone == 1
-            ? 'Ndiyo'
-            : member.lives_alone == 0
-            ? 'Hapana'
-            : '-'}
-        </td>
-      </tr>
+    <tr>
+      <td className="py-2 font-bold">Anaishi peke yake?</td>
+      <td>
+        {member.lives_alone === true
+          ? 'Ndiyo'
+          : member.lives_alone === false
+          ? 'Hapana'
+          : '-'}
+      </td>
+    </tr>
 
       <tr>
         <td className="py-2 font-bold">Anaishi na nani?</td>
-        <td>{member.lives_with ?? '-'}</td>
+        <td>{member.live_with_who ?? '-'}</td>
       </tr>
 
       {/* EXTRA FAMILY INFO (FROM YOUR PAYLOAD) */}
@@ -746,13 +636,13 @@ const handleSave = async () => {
         <td>{member.family_role ?? '-'}</td>
       </tr>
 
-      <tr>
+      {/* <tr>
         <td className="py-2 font-bold">Anaishi na (maelezo)</td>
         <td>{member.live_with_who ?? '-'}</td>
-      </tr>
+      </tr> */}
 
       <tr>
-        <td className="py-2 font-bold">Mtu wa Karibu (Next of Kin)</td>
+        <td className="py-2 font-bold">Mtu wa Karibu </td>
         <td>{member.next_of_kin ?? '-'}</td>
       </tr>
 

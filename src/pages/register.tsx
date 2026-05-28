@@ -137,95 +137,150 @@ export default function RegisterPage() {
 
   // ── Submit
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validatePersonalInfo()) return;
-    if (!validateFaithInfo()) return;
+  e.preventDefault();
 
-    const payload = {
-      full_name: form.fullName,
-      gender: form.gender === 'Mwanaume' ? 'M' : 'F',
-      birth_date: form.birthDate,
-      birth_place: form.birthPlace || form.birthDistrict,
-      birth_region: form.birthRegion,
-      birth_district: form.birthDistrict,
-      birth_ward: form.birthWard,
-      birth_street: form.birthStreet,
-      residence: form.residence || `${form.residentialStreet}, ${form.residentialWard}`,
-      residential_ward: form.residentialWard,
-      residential_street: form.residentialStreet,
-      marital_status: {
-        'Nimeoa': 'Ameoa', 'Nimeolewa': 'Ameolewa',
-        'Sijaoa': 'Hajaoa', 'Sijaolewa': 'Hajaolewa',
-        'Mjane': 'Mjane', 'Mgane': 'Mgane'
-      }[form.maritalStatus] || form.maritalStatus,
-      marriage_type: ['Nimeoa', 'Nimeolewa'].includes(form.maritalStatus) ? form.marriageType || null : null,
-      spouse_name: form.spouseName,
-      children_count: Number(form.childrenCount) || 0,
-      zone: form.zone,
-      phone: form.phone,
-      whatsapp_number: form.whatsappNumber,
-      email: form.email,
-      password: form.password,
-      password_confirmation: form.passwordConfirmation,
-      has_disability: form.hasDisability === 'ndio',
-      disability_description: form.hasDisability === 'ndio' ? form.disabilityDescription : null,
-      // Faith - split date fields
-      conversion_year: Number(form.conversionYear) || null,
-      conversion_month: form.conversionMonth ? Number(form.conversionMonth) : null,
-      conversion_day: form.conversionDay ? Number(form.conversionDay) : null,
-      church_of_conversion: form.churchOfConversion,
-      baptism_year: Number(form.baptismYear) || null,
-      baptism_month: form.baptismMonth ? Number(form.baptismMonth) : null,
-      baptism_day: form.baptismDay ? Number(form.baptismDay) : null,
-      baptism_place: form.baptismPlace,
-      baptizer_name: form.baptizerName,
-      baptizer_title: form.baptizerTitle,
-      previous_church_status: form.previousChurchStatus,
-      tangu_lini: form.tanguLini,
-      kanisa_ulipotoka: form.kanisaUlipotoka,
-      church_service: form.churchService,
-      participates_communion: form.participatesCommunion === 'ndio',
-      service_duration: form.serviceDuration,
-      education_level: form.educationLevel,
-      profession: form.profession,
-      occupation: form.occupation,
-      work_place: form.workPlace,
-      work_contact: form.workContact,
-      lives_alone: form.livesAlone === 'ndio',
-      lives_with: form.livesWith,
-      family_role: form.familyRole,
-      live_with_who: form.liveWithWho,
-      next_of_kin: form.nextOfKin,
-      next_of_kin_phone: form.nextOfKinPhone,
-    };
+  if (!validatePersonalInfo()) return;
+  if (!validateFaithInfo()) return;
 
-    try {
-      setLoading(true);
-      const response = await apiFetch('/register', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+  const isLivingAlone = form.livesAlone === 'ndio';
 
-      if (!response.error) {
-        Swal.fire({ title: 'Usajili umefanikiwa!', text: 'Tafadhali ingia kwenye akaunti yako.', icon: 'success', confirmButtonText: 'Ingia' }).then(() => {
-          router.push('/login');
-        });
-        return;
-      } else {
-        Swal.fire({ title: 'Tatizo', text: `${response.message || 'Kuna Tatizo la kiufundi.'}`, icon: 'error', confirmButtonText: 'Sawa', confirmButtonColor: '#f0ce32' });
-      }
-    } catch (error: any) {
-      if (error?.errors?.email?.[0]) {
-        Swal.fire({ title: 'Barua pepe tayari imesajiliwa', text: error.errors.email[0], icon: 'error', confirmButtonText: 'Sawa' });
-      } else if (error?.errors?.phone?.[0]) {
-        Swal.fire({ title: 'Namba ya simu tayari imesajiliwa', text: error.errors.phone[0], icon: 'error', confirmButtonText: 'Sawa' });
-      } else {
-        Swal.fire({ title: 'Tatizo', text: error?.message || 'Tatizo limetokea. Jaribu tena.', icon: 'error', confirmButtonText: 'Sawa' });
-      }
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    full_name: form.fullName,
+    gender: form.gender === 'Mwanaume' ? 'M' : 'F',
+    birth_date: form.birthDate,
+    birth_place: form.birthPlace || form.birthDistrict,
+    birth_region: form.birthRegion,
+    birth_district: form.birthDistrict,
+    birth_ward: form.birthWard,
+    birth_street: form.birthStreet,
+    residence:
+      form.residence ||
+      `${form.residentialStreet}, ${form.residentialWard}`,
+
+    residential_ward: form.residentialWard,
+    residential_street: form.residentialStreet,
+
+    marital_status: {
+      Nimeoa: 'Ameoa',
+      Nimeolewa: 'Ameolewa',
+      Sijaoa: 'Hajaoa',
+      Sijaolewa: 'Hajaolewa',
+      Mjane: 'Mjane',
+      Mgane: 'Mgane',
+    }[form.maritalStatus] || form.maritalStatus,
+
+    marriage_type: ['Nimeoa', 'Nimeolewa'].includes(form.maritalStatus)
+      ? form.marriageType || null
+      : null,
+
+    spouse_name: form.spouseName,
+    children_count: Number(form.childrenCount) || 0,
+    zone: form.zone,
+    phone: form.phone,
+    whatsapp_number: form.whatsappNumber,
+    email: form.email,
+    password: form.password,
+    password_confirmation: form.passwordConfirmation,
+
+    has_disability: form.hasDisability === 'ndio',
+    disability_description:
+      form.hasDisability === 'ndio' ? form.disabilityDescription : null,
+
+    // Faith
+    conversion_year: Number(form.conversionYear) || null,
+    conversion_month: form.conversionMonth
+      ? Number(form.conversionMonth)
+      : null,
+    conversion_day: form.conversionDay
+      ? Number(form.conversionDay)
+      : null,
+    church_of_conversion: form.churchOfConversion,
+
+    baptism_year: Number(form.baptismYear) || null,
+    baptism_month: form.baptismMonth ? Number(form.baptismMonth) : null,
+    baptism_day: form.baptismDay ? Number(form.baptismDay) : null,
+    baptism_place: form.baptismPlace,
+    baptizer_name: form.baptizerName,
+    baptizer_title: form.baptizerTitle,
+    previous_church: form.previousChurchStatus,
+
+    previous_church_status: form.previousChurchStatus,
+    tangu_lini: form.tanguLini,
+    kanisa_ulipotoka: form.kanisaUlipotoka,
+    church_service: form.churchService,
+    participates_communion: form.participatesCommunion === 'ndio',
+    service_duration: form.serviceDuration,
+
+    // Education & Work
+    education_level: form.educationLevel,
+    profession: form.profession,
+    occupation: form.occupation,
+    work_place: form.workPlace,
+    work_contact: form.workContact,
+
+    // Family (FIXED)
+    lives_alone: isLivingAlone,
+    lives_with: isLivingAlone ? null : form.livesWith,
+    family_role: isLivingAlone ? null : form.familyRole,
+    live_with_who: isLivingAlone ? null : form.liveWithWho,
+    next_of_kin: form.nextOfKin,
+    next_of_kin_phone: form.nextOfKinPhone,
   };
+
+  try {
+    setLoading(true);
+
+    const response = await apiFetch('/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.error) {
+      Swal.fire({
+        title: 'Usajili umefanikiwa!',
+        text: 'Tafadhali ingia kwenye akaunti yako.',
+        icon: 'success',
+        confirmButtonText: 'Ingia',
+      }).then(() => {
+        router.push('/login');
+      });
+      return;
+    } else {
+      Swal.fire({
+        title: 'Tatizo',
+        text: response.message || 'Kuna Tatizo la kiufundi.',
+        icon: 'error',
+        confirmButtonText: 'Sawa',
+        confirmButtonColor: '#f0ce32',
+      });
+    }
+  } catch (error: any) {
+    if (error?.errors?.email?.[0]) {
+      Swal.fire({
+        title: 'Barua pepe tayari imesajiliwa',
+        text: error.errors.email[0],
+        icon: 'error',
+        confirmButtonText: 'Sawa',
+      });
+    } else if (error?.errors?.phone?.[0]) {
+      Swal.fire({
+        title: 'Namba ya simu tayari imesajiliwa',
+        text: error.errors.phone[0],
+        icon: 'error',
+        confirmButtonText: 'Sawa',
+      });
+    } else {
+      Swal.fire({
+        title: 'Tatizo',
+        text: error?.message || 'Tatizo limetokea. Jaribu tena.',
+        icon: 'error',
+        confirmButtonText: 'Sawa',
+      });
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ── Year / Month / Day helpers ──────────────────────────────
   const currentYear = new Date().getFullYear();
