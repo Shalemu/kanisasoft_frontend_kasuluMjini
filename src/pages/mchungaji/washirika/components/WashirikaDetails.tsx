@@ -647,7 +647,7 @@ const handleSave = async () => {
       </tr>
 
       <tr>
-        <td className="py-2 font-bold">Simu ya Next of Kin</td>
+        <td className="py-2 font-bold"> Simu ya mtu wako wa karibu </td>
         <td>{member.next_of_kin_phone ?? '-'}</td>
       </tr>
 
