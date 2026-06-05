@@ -161,9 +161,18 @@ const fetchMembers = async (month?: string) => {
       (u) => u.membership_status === MEMBERSHIP_STATUS.PENDING
     );
 
-    const approvedMembers = users.filter(
-      (u) => u.membership_status !== MEMBERSHIP_STATUS.PENDING
-    );
+    const approvedMembers = users
+      .filter((u) => u.membership_status !== MEMBERSHIP_STATUS.PENDING)
+      .sort((a, b) => {
+        const numA = Number(a.membership_number);
+        const numB = Number(b.membership_number);
+
+        // push invalid values to bottom
+        if (isNaN(numA)) return 1;
+        if (isNaN(numB)) return -1;
+
+        return numA - numB;
+      });
 
     setMembers([...pendingMembers, ...approvedMembers]);
     setPendingMembers(pendingMembers);

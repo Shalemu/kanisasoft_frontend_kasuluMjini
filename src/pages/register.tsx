@@ -442,7 +442,7 @@ export default function RegisterPage() {
               <>
                 <Select label="Nafasi yako katika Familia" name="familyRole" value={form.familyRole} onChange={handleChange}
                   options={['Mzazi','Mume', 'Mke', 'Mtoto',  'Ndugu']} />
-                <Select label="Unayoishi Nao" name="liveWithWho" value={form.liveWithWho} onChange={handleChange}
+                <Select label="Unaoishi Nao" name="liveWithWho" value={form.liveWithWho} onChange={handleChange}
                   options={['Wazazi', 'Mtoto/Watoto', 'Mume', 'Mke', 'Ndugu', 'Marafiki',  'Wengine']} />
               </>
             )}
