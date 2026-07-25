@@ -726,8 +726,8 @@ useEffect(()=>{
   </table>
 </div>
 
-      {/* ================= PAGINATION ================= */}
-    <div className="flex items-center justify-between mt-4 text-sm text-gray-700 dark:text-gray-300">
+  {/* ================= PAGINATION ================= */}
+<div className="flex items-center justify-between mt-4 text-sm text-gray-700 dark:text-gray-300">
 
   <button
     onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
@@ -737,21 +737,59 @@ useEffect(()=>{
     Prev
   </button>
 
+
   <div className="flex items-center gap-2">
-    {Array.from({ length: totalPages }).map((_, i) => (
-      <button
-        key={i}
-        onClick={() => setCurrentPage(i + 1)}
-        className={`px-3 py-1 rounded-lg border ${
-          currentPage === i + 1
-            ? 'bg-[#1e293b] text-white'
-            : 'hover:bg-gray-100 dark:hover:bg-white/5'
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
+
+    {currentPage > 3 && (
+      <>
+        <button
+          onClick={() => setCurrentPage(1)}
+          className="px-3 py-1 rounded-lg border hover:bg-gray-100 dark:hover:bg-white/5"
+        >
+          1
+        </button>
+
+        <span>...</span>
+      </>
+    )}
+
+
+    {Array.from({ length: totalPages })
+      .map((_, i) => i + 1)
+      .filter((page) => 
+        page >= currentPage - 2 &&
+        page <= currentPage + 2
+      )
+      .map((page) => (
+        <button
+          key={page}
+          onClick={() => setCurrentPage(page)}
+          className={`px-3 py-1 rounded-lg border ${
+            currentPage === page
+              ? "bg-[#1e293b] text-white"
+              : "hover:bg-gray-100 dark:hover:bg-white/5"
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+
+    {currentPage < totalPages - 2 && (
+      <>
+        <span>...</span>
+
+        <button
+          onClick={() => setCurrentPage(totalPages)}
+          className="px-3 py-1 rounded-lg border hover:bg-gray-100 dark:hover:bg-white/5"
+        >
+          {totalPages}
+        </button>
+      </>
+    )}
+
   </div>
+
 
   <button
     onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}

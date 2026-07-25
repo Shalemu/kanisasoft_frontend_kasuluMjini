@@ -7,7 +7,6 @@ import AssignGroupModal from "@/components/modals/AssignGroupModal";
 import LeaderModal from "@/components/modals/LeaderModal";
 import  ReasonModal from "@/components/modals/ReasonModal";
 import Link from "next/link";
-
 import {
   FaUserPlus,
   FaFilter,
@@ -163,7 +162,7 @@ function normalizeDate(value?: string | null) {
         role: u.role ?? null,
         membership_number:
           u.membership_number !== null && u.membership_number !== undefined
-            ? String(u.membership_number)
+            ? String(u.membership_number).padStart(4, "0")
             : null,
         membership_status: u.membership_status ?? "pending",
         created_at: u.created_at,
@@ -173,10 +172,9 @@ function normalizeDate(value?: string | null) {
       // Filter washirika
       const washirika = users.filter(
         (u) =>
-          u.role !== "mchungaji" &&
-          (u.membership_status === MEMBERSHIP_STATUS.ACTIVE ||
-            u.membership_status === MEMBERSHIP_STATUS.PENDING ||
-            u.membership_status === null)
+          u.membership_status === MEMBERSHIP_STATUS.ACTIVE ||
+          u.membership_status === MEMBERSHIP_STATUS.PENDING ||
+          u.membership_status === null
       );
 
       setMembers(washirika);
@@ -191,29 +189,51 @@ const filteredMembers = useMemo(() => {
   const query = searchTerm.trim().toLowerCase();
   const groupQuery = selectedGroup.trim().toLowerCase();
 
+  const normalizeNumber = (value?: string | null) => {
+    if (!value) return "";
+
+    return String(value)
+      .replace(/\D/g, "") // keep only numbers
+      .replace(/^0+/, ""); // remove leading zeros
+  };
+
   const filtered = members.filter((m) => {
     const createdDate = normalizeDate(m.created_at);
     const createdMonth = createdDate.slice(0, 7);
-    const groupNames = m.groups?.map((group) => group.name).join(" ") ?? "";
 
-    const normalizedMembershipNumber = (m.membership_number ?? "").replace(/^0+/, "");
-    const normalizedQuery = query.replace(/^0+/, "");
+    const groupNames =
+      m.groups?.map((group) => group.name).join(" ") ?? "";
+
+    const membershipNumber = String(m.membership_number ?? "");
+
+    const cleanMembershipNumber = normalizeNumber(membershipNumber);
+    const cleanQuery = normalizeNumber(query);
 
     const matchesSearch =
       !query ||
       Boolean(
         m.full_name?.toLowerCase().includes(query) ||
-          m.phone?.includes(searchTerm.trim()) ||
-          m.membership_number?.toLowerCase().includes(query) ||
-          (normalizedQuery &&
-            normalizedMembershipNumber.includes(normalizedQuery))
+        m.phone?.includes(query) ||
+        membershipNumber.includes(query) ||
+        (cleanQuery && cleanMembershipNumber.includes(cleanQuery))
       );
-    const matchesMonth = !selectedMonth || createdMonth === selectedMonth;
-    const matchesDateFrom = !fromDate || createdDate >= fromDate;
-    const matchesDateTo = !toDate || createdDate <= toDate;
+
+    const matchesMonth =
+      !selectedMonth || createdMonth === selectedMonth;
+
+    const matchesDateFrom =
+      !fromDate || createdDate >= fromDate;
+
+    const matchesDateTo =
+      !toDate || createdDate <= toDate;
+
     const matchesGroup =
-      !groupQuery || groupNames.toLowerCase().includes(groupQuery);
-    const matchesStatus = !statusFilter || m.membership_status === statusFilter;
+      !groupQuery ||
+      groupNames.toLowerCase().includes(groupQuery);
+
+    const matchesStatus =
+      !statusFilter ||
+      m.membership_status === statusFilter;
 
     return (
       matchesSearch &&
@@ -225,11 +245,15 @@ const filteredMembers = useMemo(() => {
     );
   });
 
+
   const sorted = filtered.sort((a, b) => {
     const aNumber = a.membership_number?.trim();
     const bNumber = b.membership_number?.trim();
 
-    if (!aNumber && !bNumber) return a.full_name.localeCompare(b.full_name);
+    if (!aNumber && !bNumber) {
+      return a.full_name.localeCompare(b.full_name);
+    }
+
     if (!aNumber) return 1;
     if (!bNumber) return -1;
 
@@ -240,6 +264,7 @@ const filteredMembers = useMemo(() => {
   });
 
   return sorted;
+
 }, [
   members,
   searchTerm,
@@ -674,14 +699,14 @@ const totalPending = filteredMembers.filter(
   <div className="flex gap-3">
     
     <button
-      onClick={() => exportToExcel(filteredMembers, "washirika", statusLabels)}
+      onClick={() => exportToExcel(filteredMembers, "washirika")}
       className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
     >
       Pakua Excel
     </button>
 
     <button
-      onClick={() => exportToPDF(filteredMembers, "washirika", statusLabels)}
+      onClick={() => exportToPDF(filteredMembers, "washirika")}
       className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
     >
       Pakua PDF
@@ -706,7 +731,7 @@ const totalPending = filteredMembers.filter(
               <th className="px-4 py-3 text-left">Simu</th>
               <th className="px-4 py-3 text-left">Zone</th>
               <th className="px-4 py-3 text-left">Tarehe</th>
-              <th className="px-4 py-3 text-left">Hatua</th>
+              <th className="px-4 py-3 text-left">Nafasi</th>
             </tr>
           </thead>
 
@@ -739,7 +764,7 @@ const totalPending = filteredMembers.filter(
             href={`/washirika/detail?id=${m.id}`}
             className="font-medium text-gray-900 hover:text-blue-600 transition dark:text-white/90 dark:hover:text-blue-400"
           >
-            {m.full_name}
+         {m.full_name?.toUpperCase()}
           </Link>
 
               <div className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
@@ -773,9 +798,23 @@ const totalPending = filteredMembers.filter(
                         </button>
                       </div>
                     ) : (
-                      <span className="bg-green-600 text-white px-2 py-1 rounded text-xs">
-                        {getMembershipStatusLabel(m.membership_status, statusLabels)}
-                      </span>
+                  
+                  <div className="flex flex-col gap-1">
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium w-fit ${
+                        m.role === "admin"
+                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                          : m.role === "mchungaji"
+                          ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                          : m.role === "mshirika"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      }`}
+                    >
+                      {m.role}
+                    </span>
+           
+                  </div>
                     )}
                   </td>
                 </tr>
@@ -807,8 +846,6 @@ const totalPending = filteredMembers.filter(
           Next
         </button>
       </div>
-
-
 <AssignGroupModal
   isOpen={groupDialogOpen}
   onClose={() => setGroupDialogOpen(false)}
@@ -841,10 +878,5 @@ const totalPending = filteredMembers.filter(
 
     </div>
     </div>
-
-  
-    
   );
-
-  
 }

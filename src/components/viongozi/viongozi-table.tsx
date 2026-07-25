@@ -61,7 +61,7 @@ export default function ViongoziTable({
                   {/* NAME */}
                   <td className="p-3">
                     <div className="font-medium text-gray-800 dark:text-white/90">
-                      {row.name}
+                       {row.name?.toUpperCase()}
                     </div>
                     <div className="text-xs text-gray-400">
                       {row.email}

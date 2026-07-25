@@ -30,7 +30,7 @@ export default function WaliostafuPage() {
             <tbody>
               {leaders.map((l: any) => (
                 <tr key={l.id} className="border-t border-gray-100 dark:border-gray-800">
-                  <td className="p-2">{l.name}</td>
+                  <td className="p-2">{l.name?.toUpperCase()}</td>
                   <td className="p-2">{l.phone}</td>
                   <td className="p-2">{l.email}</td>
                   <td className="p-2">

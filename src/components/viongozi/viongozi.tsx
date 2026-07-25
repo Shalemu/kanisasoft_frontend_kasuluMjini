@@ -57,7 +57,7 @@ export default function ViongoziPage() {
       render:(row:any)=>(
         <div>
           <div className="font-medium">
-            {row.name}
+            {row.name?.toUpperCase()}
           </div>
 
           <div className="text-xs text-gray-400">

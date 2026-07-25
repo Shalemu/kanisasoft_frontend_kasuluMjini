@@ -1,34 +1,24 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import {
-  getMembershipStatusLabel,
-  type MembershipStatusLabels,
-} from "@/lib/memberLabels";
 
 export const useWashirikaExport = () => {
 
   const exportToExcel = (
   members: any[],
-  fileName: string = "washirika",
-  membershipStatusLabels?: MembershipStatusLabels | null
+  fileName: string = "washirika"
 ) => {
-  const data = members.map((m, index) => ({
-    "#": index + 1,
+
+  const activeMembers = members.filter(
+    (m) => m.membership_status === "active"
+  );
+
+  const data = activeMembers.map((m, index) => ({
+    "Na.": index + 1,
     Jina: m.full_name,
-    Namba: m.membership_number || "—",
-    Simu: m.phone || "—",
-    Email: m.email || "—",
-    Jinsia: m.gender || "—",
-    "Tarehe ya Kuzaliwa": m.birth_date
-      ? new Date(m.birth_date).toLocaleDateString()
-      : "—",
-    "Hali ya ndoa": m.marital_status || "—",
-    Elimu: m.education_level || "—",
-    Zone: m.residential_zone || "—",
-    Tarehe: new Date(m.created_at).toLocaleDateString(),
-    Sababu: m.deactivation_reason || "—",
-    Status: getMembershipStatusLabel(m.membership_status, membershipStatusLabels),
+    "Namba ya ushirika": m.membership_number || "—",
+    "Namba ya simu": m.phone || "—",
+    "Zone au Mtaa": m.residential_zone || "—",
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(data);
@@ -41,34 +31,41 @@ export const useWashirikaExport = () => {
 
   const exportToPDF = (
   members: any[],
-  fileName: string = "washirika",
-  membershipStatusLabels?: MembershipStatusLabels | null
+  fileName: string = "washirika"
 ) => {
+
+  const activeMembers = members.filter(
+    (m) => m.membership_status === "active"
+  );
+
   const doc = new jsPDF();
 
-  doc.text("Ripoti ya Washirika", 14, 15);
+  doc.text("Ripoti ya Washirika Hai", 14, 15);
 
-  const tableData = members.map((m, index) => [
+  const tableData = activeMembers.map((m, index) => [
     index + 1,
     m.full_name,
     m.membership_number || "—",
     m.phone || "—",
-    m.gender || "—",
-    m.marital_status || "—",
-    m.education_level || "—",
     m.residential_zone || "—",
-    m.deactivation_reason || "—",
-    getMembershipStatusLabel(m.membership_status, membershipStatusLabels),
   ]);
 
   autoTable(doc, {
     startY: 25,
-    head: [["#", "Jina", "Namba", "Simu", "Jinsia", "Ndoa", "Elimu", "Zone", "Sababu", "Status"]],
+    head: [[
+      "Na.",
+      "Jina",
+      "Namba ya ushirika",
+      "Namba ya simu",
+      "Zone au Mtaa",
+    ]],
     body: tableData,
   });
 
   doc.save(`${fileName}.pdf`);
 };
+
+
   return {
     exportToExcel,
     exportToPDF,

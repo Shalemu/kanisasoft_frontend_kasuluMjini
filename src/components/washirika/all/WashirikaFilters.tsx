@@ -16,10 +16,10 @@ interface Props {
 export default function WashirikaFilters(props: Props) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-white p-4 rounded-xl shadow dark:bg-white/[0.03]">
-      
+
       <input
         type="text"
-        placeholder="Search name or phone..."
+        placeholder="Search name, phone or member no..."
         value={props.searchTerm}
         onChange={(e) => props.setSearchTerm(e.target.value)}
         className="border border-gray-300 bg-white p-2 rounded text-gray-800 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
@@ -53,6 +53,7 @@ export default function WashirikaFilters(props: Props) {
         onChange={(e) => props.setSelectedGroup(e.target.value)}
         className="border border-gray-300 bg-white p-2 rounded text-gray-800 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-gray-500"
       />
+
     </div>
   );
 }

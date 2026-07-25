@@ -249,7 +249,7 @@ if (!loading && members.length === 0) {
 
     {/* EXPORT EXCEL */}
     <button
-      onClick={() => exportToExcel(filteredMembers, "waliokataliwa", statusLabels)}
+      onClick={() => exportToExcel(filteredMembers, "waliokataliwa",)}
       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center gap-2 text-sm"
     >
       <FaFileExcel />
@@ -258,7 +258,7 @@ if (!loading && members.length === 0) {
 
     {/* EXPORT PDF */}
     <button
-      onClick={() => exportToPDF(filteredMembers, "waliokataliwa", statusLabels)}
+      onClick={() => exportToPDF(filteredMembers, "waliokataliwa",)}
       className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center gap-2 text-sm"
     >
       <FaFilePdf />
@@ -336,7 +336,7 @@ if (!loading && members.length === 0) {
                   </td>
 
                   <td className="p-3 font-medium">
-                    {m.full_name}
+                  {m.full_name?.toUpperCase()}
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {m.membership_number || "—"}
                     </div>

@@ -243,7 +243,7 @@ if (!loading && members.length === 0) {
   <div className="flex gap-2">
 
     <button
-      onClick={() => exportToExcel(filteredMembers, "waliopoteza-ushirika", statusLabels)}
+      onClick={() => exportToExcel(filteredMembers, "waliopoteza-ushirika")}
       className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md flex items-center gap-2 text-sm"
     >
       <FaFileExcel />
@@ -251,7 +251,7 @@ if (!loading && members.length === 0) {
     </button>
 
     <button
-      onClick={() => exportToPDF(filteredMembers, "waliopoteza-ushirika", statusLabels)}
+      onClick={() => exportToPDF(filteredMembers, "waliopoteza-ushirika")}
       className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md flex items-center gap-2 text-sm"
     >
       <FaFilePdf />
@@ -327,7 +327,7 @@ if (!loading && members.length === 0) {
                   </td>
 
                   <td className="p-3 font-medium">
-                    {m.full_name}
+                   {m.full_name?.toUpperCase()}
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {m.membership_number || "—"}
                     </div>
