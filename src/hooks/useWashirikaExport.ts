@@ -15,7 +15,7 @@ export const useWashirikaExport = () => {
 
   const data = activeMembers.map((m, index) => ({
     "Na.": index + 1,
-    Jina: m.full_name,
+    Jina: (m.full_name || "").toUpperCase(),
     "Namba ya ushirika": m.membership_number || "—",
     "Namba ya simu": m.phone || "—",
     "Zone au Mtaa": m.residential_zone || "—",
@@ -44,7 +44,7 @@ export const useWashirikaExport = () => {
 
   const tableData = activeMembers.map((m, index) => [
     index + 1,
-    m.full_name,
+   (m.full_name || "").toUpperCase(),
     m.membership_number || "—",
     m.phone || "—",
     m.residential_zone || "—",

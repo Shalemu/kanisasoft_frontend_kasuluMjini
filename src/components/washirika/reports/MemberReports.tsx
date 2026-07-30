@@ -280,7 +280,7 @@ export default function MemberReports() {
       const rawSearch = String(nextFilters.search ?? "").trim();
 
       if (/^\d+$/.test(rawSearch) && !nextFilters.membership_number) {
-        nextFilters.membership_number = rawSearch;
+        nextFilters.membership_number = rawSearch.padStart(4, "0");
       }
 
       const params = new URLSearchParams(nextFilters);
