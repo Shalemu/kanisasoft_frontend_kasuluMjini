@@ -375,6 +375,16 @@ const [form, setForm] = useState<MemberFormData>(getEmptyMemberForm());
       return false;
     }
 
+    if (form.hasDisability === "ndio" && !form.disabilityDescription.trim()) {
+      Swal.fire({
+        title: "Tahadhari",
+        text: "Eleza aina ya ulemavu.",
+        icon: "warning",
+      });
+
+      return false;
+    }
+
     if (!isEditMode && form.password !== form.passwordConfirmation) {
       Swal.fire({
         title: "Tatizo",
@@ -553,7 +563,8 @@ const [form, setForm] = useState<MemberFormData>(getEmptyMemberForm());
       has_disability:
         form.hasDisability === "ndio",
 
-      disability_description: "",
+      disability_description:
+        form.hasDisability === "ndio" ? form.disabilityDescription : "",
 
       conversion_year:
         Number(form.conversionYear) || null,
@@ -612,7 +623,7 @@ const [form, setForm] = useState<MemberFormData>(getEmptyMemberForm());
       work_place:
         form.workPlace,
 
-      work_contact: "",
+      work_contact: form.workContact,
 
       lives_alone:
         form.livesAlone === "ndio",

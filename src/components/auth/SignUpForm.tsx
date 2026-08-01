@@ -262,7 +262,7 @@ export default function RegisterPage() {
 
             {/* Zone - dropdown with new values */}
             <Select label="Mtaa *" name="zone" value={form.zone} onChange={handleChange}
-              options={['MURUBOMBO', 'MURUSI B', 'KIGANAMO', 'MURUSI A', 'KUMUNYIKA B', 'KAGUNGA C', 'KUMUNYIKA A', 'KAGANGA B', 'MURUBONA A', 'KAGUNGA A']}
+              options={['MURUBOMBO', 'MURUSI B', 'KIGANAMO', 'MURUSI A', 'KUMUNYIKA B', 'KAGUNGA C', 'KUMUNYIKA A', 'KAGUNGA B', 'MURUBONA A', 'KAGUNGA A','MURUBONA B']}
             />
 
             <Select label="Hali ya ndoa *" name="maritalStatus" value={form.maritalStatus} onChange={handleChange}
@@ -388,9 +388,9 @@ export default function RegisterPage() {
             {form.livesAlone === 'hapana' && (
               <>
                 <Select label="Nafasi yako katika Familia" name="familyRole" value={form.familyRole} onChange={handleChange}
-                  options={['Mzazi', 'Mtoto', 'Ndugu']} />
-                <Select label="Unayoishi Nao" name="liveWithWho" value={form.liveWithWho} onChange={handleChange}
-                  options={['Wazazi', 'Ndugu', 'Marafiki', 'Wengine']} />
+                  options={['Mzazi', 'Mtoto', 'Ndugu','Mume','Mke']} />
+                <Select label="unaoishi nao" name="liveWithWho" value={form.liveWithWho} onChange={handleChange}
+                  options={['Wazazi', 'Ndugu', 'Marafiki','Mume','Mke','Wengine']} />
               </>
             )}
             <Field label="Jina la Mtu wako wa Karibu" name="nextOfKin" value={form.nextOfKin} onChange={handleChange} />

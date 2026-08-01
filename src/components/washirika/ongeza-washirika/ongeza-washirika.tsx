@@ -214,15 +214,15 @@ case 0:
         onChange={handleChange}
       />
 
-      {/* Zone */}
+      {/* Mtaa */}
 
       <div>
         <label className="block mb-1 text-sm font-medium text-gray-800 dark:text-gray-200">
-          Kanda / Zone *
+          Mtaa *
         </label>
 
     <Select
-  
+
   name="zone"
   value={form.zone}
   onChange={handleChange}
@@ -232,6 +232,12 @@ case 0:
     { value: "KIGANAMO", label: "KIGANAMO" },
     { value: "MURUSI A", label: "MURUSI A" },
     { value: "KUMUNYIKA B", label: "KUMUNYIKA B" },
+    { value: "KAGUNGA C", label: "KAGUNGA C" },
+    { value: "KUMUNYIKA A", label: "KUMUNYIKA A" },
+    { value: "KAGUNGA B", label: "KAGUNGA B" },
+    { value: "MURUBONA A", label: "MURUBONA A" },
+    { value: "KAGUNGA A", label: "KAGUNGA A" },
+    { value: "MURUBONA B", label: "MURUBONA B" },
   ]}
 />
       </div>
@@ -359,6 +365,15 @@ options={[
   ]}
 />
       </div>
+
+      {form.hasDisability === "ndio" && (
+        <Field
+          label="Eleza aina ya ulemavu *"
+          name="disabilityDescription"
+          value={form.disabilityDescription}
+          onChange={handleChange}
+        />
+      )}
 
     </>
   );
@@ -665,9 +680,9 @@ case 1:
           />
 
           <Field
-            label="Mahali pa Kazi (Hiari)"
-            name="workPlace"
-            value={form.workPlace}
+            label="Mawasiliano ya Kazi (Hiari)"
+            name="workContact"
+            value={form.workContact}
             onChange={handleChange}
           />
         </div>
@@ -721,6 +736,8 @@ case 1:
               { value: "Mzazi", label: "Mzazi" },
               { value: "Mtoto", label: "Mtoto" },
               { value: "Ndugu", label: "Ndugu" },
+              { value: "Mume", label: "Mume" },
+              { value: "Mke", label: "Mke" },
             ]}
           />
 
@@ -733,6 +750,8 @@ case 1:
               { value: "Wazazi", label: "Wazazi" },
               { value: "Ndugu", label: "Ndugu" },
               { value: "Marafiki", label: "Marafiki" },
+              { value: "Mume", label: "Mume" },
+              { value: "Mke", label: "Mke" },
               { value: "Wengine", label: "Wengine" },
             ]}
           />
