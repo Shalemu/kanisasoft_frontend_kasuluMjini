@@ -34,7 +34,6 @@ export default function SendMessageModal({
     };
 
   const previewMessage = `Bwana Yesu Asifiwe ${previewVisitor.full_name},
-
 ${message.trim()}`;
   const handleSend = async () => {
     if (!message.trim()) {
@@ -57,8 +56,7 @@ ${message.trim()}`;
       for (const visitor of selectedVisitors) {
         try {
           const personalizedMessage = `Bwana Yesu Asifiwe ${visitor.full_name},
-
-        ${message.trim()}`;
+         ${message.trim()}`;
 
           const response = await apiFetch('/send-sms', {
             method: 'POST',
