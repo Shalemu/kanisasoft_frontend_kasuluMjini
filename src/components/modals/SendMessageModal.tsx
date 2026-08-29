@@ -35,77 +35,99 @@ export default function SendMessageModal({
 
   const previewMessage = `Bwana Yesu Asifiwe ${previewVisitor.full_name},
 ${message.trim()}`;
-  const handleSend = async () => {
-    if (!message.trim()) {
-      Swal.fire({
-        title: 'Ujumbe Unahitajika',
-        text: 'Tafadhali andika ujumbe kwanza.',
-        icon: 'warning',
-        confirmButtonText: 'Sawa',
-        confirmButtonColor: '#f59e0b',
-      });
-      return;
-    }
 
-    setSending(true);
 
-    try {
-      let success = 0;
-      let failed = 0;
+const handleSend = async () => {
+  if (!message.trim()) {
+    Swal.fire({
+      title: 'Ujumbe Unahitajika',
+      text: 'Tafadhali andika ujumbe kwanza.',
+      icon: 'warning',
+      confirmButtonText: 'Sawa',
+      confirmButtonColor: '#f59e0b',
+    });
+    return;
+  }
 
-      for (const visitor of selectedVisitors) {
-        try {
-          const personalizedMessage = `Bwana Yesu Asifiwe ${visitor.full_name},
-         ${message.trim()}`;
+  setSending(true);
 
-          const response = await apiFetch('/send-sms', {
-            method: 'POST',
-            body: JSON.stringify({
-              phone: visitor.phone,
-              email: visitor.email || '',
-              name: visitor.full_name,
-              message: personalizedMessage,
-              send_email: !!visitor.email,
-            }),
-          });
+  try {
+    let success = 0;
+    let failed = 0;
 
-          if (response.status === 'success') {
-            success++;
-          } else {
-            failed++;
-          }
-        } catch (err) {
-          console.error(err);
+    for (const visitor of selectedVisitors) {
+      try {
+        const personalizedMessage =
+          `Bwana Yesu Asifiwe ${visitor.full_name},\n${message.trim()}`;
+
+        const response = await apiFetch('/send-sms', {
+          method: 'POST',
+          body: {
+            phone: visitor.phone,
+            email: visitor.email || '',
+            name: visitor.full_name,
+            message: personalizedMessage,
+            send_email: !!visitor.email,
+          },
+        });
+
+        const smsSent = Number(
+          response?.summary?.sms_sent ?? 0
+        );
+
+        if (smsSent > 0) {
+          success++;
+        } else {
           failed++;
         }
+
+      } catch (error) {
+        console.error('SMS REQUEST ERROR:', error);
+        failed++;
       }
-
-      Swal.fire({
-        title: failed > 0 ? 'Imekamilika Kwa Sehemu' : 'Imefanikiwa',
-        text: `${success} ujumbe umetumwa successfully.${
-          failed ? ` ${failed} imeshindikana.` : ''
-        }`,
-        icon: failed > 0 ? 'warning' : 'success',
-        confirmButtonText: 'Sawa',
-        confirmButtonColor: '#2563eb',
-      });
-
-      setMessage('');
-      onClose();
-    } catch (error) {
-      console.error(error);
-
-      Swal.fire({
-        title: 'Tatizo',
-        text: 'Hitilafu wakati wa kutuma ujumbe.',
-        icon: 'error',
-        confirmButtonText: 'Sawa',
-        confirmButtonColor: '#dc2626',
-      });
-    } finally {
-      setSending(false);
     }
-  };
+
+    await Swal.fire({
+      title:
+        failed > 0
+          ? 'Imekamilika Kwa Sehemu'
+          : 'Imefanikiwa',
+
+      text: `${success} ujumbe umetumwa.${
+        failed > 0 ? ` ${failed} imeshindikana.` : ''
+      }`,
+
+      icon:
+        failed > 0
+          ? 'warning'
+          : 'success',
+
+      confirmButtonText: 'Sawa',
+      confirmButtonColor: '#2563eb',
+    });
+
+    setMessage('');
+    onClose();
+
+  } catch (error) {
+    console.error('GENERAL SMS ERROR:', error);
+
+    await Swal.fire({
+      title: 'Tatizo',
+      text:
+        error instanceof Error
+          ? error.message
+          : 'Hitilafu wakati wa kutuma ujumbe.',
+      icon: 'error',
+      confirmButtonText: 'Sawa',
+      confirmButtonColor: '#dc2626',
+    });
+
+  } finally {
+    setSending(false);
+  }
+};
+
 
   return (
   <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">

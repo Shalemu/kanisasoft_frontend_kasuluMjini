@@ -56,33 +56,46 @@ export default function WaliopoteaList({ searchTerm }: Props) {
   const { exportToExcel, exportToPDF } = useWashirikaExport();
 
 
-  useEffect(() => {
-    async function fetchLostMembers() {
-      setLoading(true);
-      try {
-        const data = await apiFetch("/users");
+useEffect(() => {
+  async function fetchLostMembers() {
+    setLoading(true);
 
-        if (data?.users) {
-          setStatusLabels(data.membership_status_labels ?? null);
+    try {
+      const data = await apiFetch("/users");
 
-          const lost = data.users.filter((u: any) =>
-           ["detained", "lost", "left", "deceased", "rejected"].includes(
-              u.membership_status
-            )
-          );
+      if (data?.users) {
+        setStatusLabels(data.membership_status_labels ?? null);
 
-          setMembers(lost);
-        }
-      } catch (err) {
-        console.error("Error fetching lost members:", err);
-        Swal.fire("Error", "Imeshindikana kupakia data", "error");
-      } finally {
-        setLoading(false);
+        const lost = data.users
+          .filter(
+            (u: User) => u.membership_status === "deactivated"
+          )
+          .map((u: User) => ({
+            ...u,
+            membership_number:
+              u.membership_number !== null &&
+              u.membership_number !== undefined
+                ? String(u.membership_number).padStart(4, "0")
+                : null,
+          }));
+
+        setMembers(lost);
       }
-    }
+    } catch (err) {
+      console.error("Error fetching lost members:", err);
 
-    fetchLostMembers();
-  }, []);
+      Swal.fire(
+        "Error",
+        "Imeshindikana kupakia data",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchLostMembers();
+}, []);
 
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {

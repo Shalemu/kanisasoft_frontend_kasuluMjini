@@ -63,6 +63,12 @@ useEffect(() => {
 
     try {
       const data = await apiFetch("/users");
+            console.log(
+        "ESTHER FROM API:",
+        data.users?.filter((u: any) =>
+          u.full_name?.toLowerCase().includes("esther")
+        )
+      );
 
       if (data?.users) {
         setStatusLabels(data.membership_status_labels ?? null);

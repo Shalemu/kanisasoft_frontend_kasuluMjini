@@ -55,21 +55,46 @@ export default function AddVisitorModal({ open, onClose, onSubmit, visitor }: Pr
   if (!open) return null;
 
   const handleSave = async () => {
-    if (!form.full_name || !form.phone || !form.church_origin || !form.visit_date) {
-      await Swal.fire('Taarifa Hazijakamilika', 'Jaza jina, simu, kanisa na tarehe.', 'warning');
-      return;
-    }
-    try {
-      setSaving(true);
-      await onSubmit(form);
-      await Swal.fire('Imefanikiwa', visitor ? 'Taarifa za mgeni zimehaririwa.' : 'Mgeni ameongezwa kikamilifu.', 'success');
-      onClose();
-    } catch (error) {
-      await Swal.fire('Hitilafu', error instanceof Error ? error.message : 'Imeshindikana kuhifadhi taarifa.', 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (
+    !form.full_name ||
+    !form.phone ||
+    !form.church_origin ||
+    !form.visit_date
+  ) {
+    await Swal.fire(
+      'Taarifa Hazijakamilika',
+      'Jaza jina, simu, kanisa na tarehe.',
+      'warning'
+    );
+    return;
+  }
+
+  try {
+    setSaving(true);
+
+    await onSubmit(form);
+
+    await Swal.fire(
+      'Imefanikiwa',
+      visitor
+        ? 'Taarifa za mgeni zimehaririwa.'
+        : 'Mgeni ameongezwa kikamilifu.',
+      'success'
+    );
+
+    // Don't call onClose here if parent already closes it
+  } catch (error) {
+    await Swal.fire(
+      'Hitilafu',
+      error instanceof Error
+        ? error.message
+        : 'Imeshindikana kuhifadhi taarifa.',
+      'error'
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
   const inputClass = 'w-full border border-gray-300 bg-white rounded-lg px-3 py-2 text-gray-800 placeholder:text-gray-400 dark:border-gray-700 dark:bg-gray-800 dark:text-white/90 dark:placeholder:text-gray-500';
   return (

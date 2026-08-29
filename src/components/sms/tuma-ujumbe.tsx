@@ -371,21 +371,37 @@ export default function TumaUjumbe() {
       </div>
 
       {/* MESSAGE CARD */}
-      <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+    <div className="w-full max-w-full min-w-0 overflow-hidden rounded-3xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
 
-        <h2 className="mb-4 text-lg font-semibold">
-          Andika Ujumbe
-        </h2>
+      <h2 className="mb-4 text-lg font-semibold">
+        Andika Ujumbe
+      </h2>
 
-        <textarea
-          value={message}
-          onChange={e =>
-            setMessage(e.target.value)
-          }
-          rows={8}
-          placeholder="Andika ujumbe wako hapa..."
-          className="w-full rounded-2xl border border-gray-300 p-4 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-100"
-        />
+<textarea
+  value={message}
+  onChange={(e) => setMessage(e.target.value)}
+  rows={8}
+  placeholder="Andika ujumbe wako hapa..."
+  className="
+    block
+    w-full
+    min-w-0
+    max-w-full
+    resize-y
+    overflow-y-auto
+    overflow-x-hidden
+    break-words
+    whitespace-pre-wrap
+    rounded-2xl
+    border border-gray-300
+    p-4
+    box-sizing-border-box
+    focus:border-blue-500
+    focus:outline-none
+    focus:ring-4
+    focus:ring-blue-100
+  "
+/>
 
         <div className="mt-3 flex justify-between text-sm text-gray-500">
           <span>

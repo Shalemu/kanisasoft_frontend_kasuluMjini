@@ -16,7 +16,7 @@ import {
   FaUsers,
   FaArrowRight, 
 } from "react-icons/fa";
-import { useWashirikaExport } from "@/hooks/useWashirikaExport";
+import { useWanaosubiriExport } from "@/hooks/useWanaosubiriExport";
 import {
   getMembershipStatusLabel,
   type MembershipStatusLabels,
@@ -59,7 +59,7 @@ interface Props {
   statusFilter?: string;
 }
 
-export default function WashirikaList({
+export default function WanaosubiriList({
   searchTerm,
   selectedMonth = "",
   selectedGroup = "",
@@ -88,7 +88,7 @@ export default function WashirikaList({
   useState<"reject" | "deactivate" | null>(null);
 
   //export
-  const { exportToExcel, exportToPDF } = useWashirikaExport();
+  const { exportToExcel, exportToPDF } = useWanaosubiriExport();
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -173,7 +173,7 @@ function normalizeDate(value?: string | null) {
       // Filter washirika
       const washirika = users.filter(
         (u) =>
-          u.membership_status === MEMBERSHIP_STATUS.ACTIVE ||
+       
           u.membership_status === MEMBERSHIP_STATUS.PENDING ||
           u.membership_status === null
       );
@@ -474,55 +474,37 @@ const handleSendSms = async () => {
 };
 
 const handleConfirmReason = async (reason: string) => {
-  if (actionType === "reject" && !selectedActionUser) return;
+  if (!selectedActionUser && actionType === "reject") return;
 
   try {
-    // =========================
-    // REJECT
-    // =========================
-    if (actionType === "reject") {
-      const status = "rejected";
+    let status = "lost";
 
-      const response = await apiFetch(
-        `/users/${selectedActionUser}/reject`,
-        {
-          method: "POST",
-          body: {
-            reason,
-            status,
-          },
-        }
-      );
+    if (reason === "Amehama") status = "left";
+    if (reason === "Amefariki") status = "deceased";
+    if (reason === "Ametegwa ushirika") status = "detained";
+    if (reason === "Amepotea") status = "lost";
+    if (reason === "Amejisajiri kimakosa") status = "lost";
+
+    if (actionType === "reject") {
+      const response = await apiFetch(`/users/${selectedActionUser}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason, status }),
+      });
 
       if (response.status === "success") {
         setMembers((prev) =>
           prev.map((m) =>
             m.id === selectedActionUser
-              ? {
-                  ...m,
-                  membership_status: status,
-                  deactivation_reason: reason,
-                }
+              ? { ...m, membership_status: status, deactivation_reason: reason }
               : m
           )
         );
 
-        Swal.fire(
-          "Imekataliwa",
-          "Maombi ya mshirika yamekataliwa",
-          "warning"
-        );
+        Swal.fire("Imekataliwa", "Mshirika amekataliwa", "warning");
       }
-
-      return;
     }
 
-    // =========================
-    // DEACTIVATE
-    // =========================
     if (actionType === "deactivate") {
-      const status = "deactivated";
-
       const confirm = await Swal.fire({
         title: "Deactivate washirika?",
         text: `${selectedMembers.length} washirika wataondolewa kwenye hali ya active.`,
@@ -545,22 +527,10 @@ const handleConfirmReason = async (reason: string) => {
           continue;
         }
 
-        console.log("DEACTIVATE REQUEST:", {
-          memberId,
-          reason,
-          status,
+        const response = await apiFetch(`/members/${memberId}/deactivate`, {
+          method: "POST",
+          body: { reason, status },
         });
-
-        const response = await apiFetch(
-          `/members/${memberId}/deactivate`,
-          {
-            method: "POST",
-            body: {
-              reason,
-              status,
-            },
-          }
-        );
 
         if (response.status === "success") {
           successCount++;
@@ -570,7 +540,7 @@ const handleConfirmReason = async (reason: string) => {
               m.id === id
                 ? {
                     ...m,
-                    membership_status: "deactivated",
+                    membership_status: status,
                     deactivation_reason: reason,
                   }
                 : m
@@ -589,11 +559,7 @@ const handleConfirmReason = async (reason: string) => {
       setSelectedMembers([]);
     }
   } catch (error: any) {
-    Swal.fire(
-      "Error",
-      error?.message || "Hitilafu imetokea",
-      "error"
-    );
+    Swal.fire("Error", error?.message || "Hitilafu imetokea", "error");
   } finally {
     setReasonModalOpen(false);
     setSelectedActionUser(null);
@@ -601,7 +567,8 @@ const handleConfirmReason = async (reason: string) => {
   }
 };
  
-const totalMembers = filteredMembers.length;
+
+  const totalMembers = filteredMembers.length;
 
 const totalApproved = filteredMembers.filter(
   (m) => m.membership_status === MEMBERSHIP_STATUS.ACTIVE
@@ -614,73 +581,6 @@ const totalPending = filteredMembers.filter(
   return (
 
     <div className="space-y-5">
-
-    {/*  SUMMARY CARDS */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-      
-      {/* TOTAL */}
-      <div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Jumla ya Washirika</p>
-            <h2 className="text-2xl font-bold mt-1 text-gray-800 dark:text-white/90">
-              {loading ? "..." : totalMembers}
-            </h2>
-          </div>
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 flex items-center justify-center rounded dark:bg-blue-500/10">
-            <FaUsers />
-          </div>
-        </div>
-      </div>
-
-      {/* APPROVED */}
-      <div className="bg-white border border-gray-200 rounded-md shadow-sm p-4 dark:border-gray-800 dark:bg-white/[0.03]">
-        <div className="flex justify-between items-center">
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Walioidhinishwa</p>
-            <h2 className="text-2xl font-bold mt-1 text-gray-800 dark:text-white/90">
-              {loading ? "..." : totalApproved}
-            </h2>
-          </div>
-          <div className="w-12 h-12 bg-green-50 text-green-600 flex items-center justify-center rounded dark:bg-green-500/10">
-            <FaUsers />
-          </div>
-        </div>
-      </div>
-
-       {/* PENDING */}
-        <Link
-          href="/washirika/wanaosubiri"
-          className="block bg-white border border-gray-200 rounded-md shadow-sm p-4 
-                    hover:shadow-md hover:border-yellow-300 transition-all duration-200
-                    dark:border-gray-800 dark:bg-white/[0.03]"
-        >
-          <div className="flex justify-between items-center">
-            
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Wanaosubiri
-              </p>
-
-              <h2 className="text-2xl font-bold mt-1 text-gray-800 dark:text-white/90">
-                {loading ? "..." : totalPending}
-              </h2>
-
-              <div className="flex items-center gap-1 mt-2 text-sm text-yellow-600">
-                <span>Angalia orodha</span>
-                <FaArrowRight className="text-xs" />
-              </div>
-            </div>
-
-            <div className="w-12 h-12 bg-yellow-50 text-yellow-600 flex items-center justify-center rounded dark:bg-yellow-500/10">
-              <FaUsers />
-            </div>
-
-          </div>
-        </Link>
-
-    </div>
-
         {/*  BULK ACTION BAR */}
     {selectedMembers.length > 0 && (
       <div className="bg-white border border-blue-200 px-4 sm:px-6 py-3 rounded shadow-sm flex flex-col gap-3 dark:border-blue-500/20 dark:bg-blue-500/10 sm:flex-row sm:items-center sm:justify-between">
@@ -747,6 +647,10 @@ const totalPending = filteredMembers.filter(
   <h2 className="text-xl font-bold text-gray-800 dark:text-white/90">Orodha ya Washirika</h2>
 
   <div className="flex gap-3">
+    
+      <span className="px-3 py-2 bg-yellow-50 text-yellow-700 rounded-md text-sm font-medium dark:bg-yellow-500/10 dark:text-yellow-300">
+      {totalPending} Wanasubiri
+      </span>
     
     <button
       onClick={() => exportToExcel(filteredMembers, "washirika")}

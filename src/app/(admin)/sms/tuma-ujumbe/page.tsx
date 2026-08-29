@@ -12,12 +12,14 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <div className="space-y-6">
-      <PageBreadcrumb pageTitle="Tuma SMS" />
+    <main className="w-full min-w-0 max-w-full overflow-x-hidden">
+      <div className="w-full min-w-0 max-w-full space-y-6">
+        <PageBreadcrumb pageTitle="Tuma SMS" />
 
-      <div className="mx-auto max-w-7xl">
-        <TumaUjumbe />
+        <div className="w-full min-w-0 max-w-7xl mx-auto overflow-x-hidden">
+          <TumaUjumbe />
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

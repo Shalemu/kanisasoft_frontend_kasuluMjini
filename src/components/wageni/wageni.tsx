@@ -71,26 +71,30 @@ export default function WageniPage() {
     fetchVisitors,
   } = useVisitors();
 
-  const handleAddVisitor = async (data: VisitorFormData) => {
-    try {
-      await apiFetch('/guests', {
-        method: 'POST',
-        body: {
-          ...data,
-          prayer: false,
-          salvation: false,
-          joining: false,
-          travel: false,
-        },
-      });
+const handleAddVisitor = async (data: VisitorFormData) => {
+  try {
+    await apiFetch('/guests', {
+      method: 'POST',
+      body: {
+        ...data,
+        prayer: false,
+        salvation: false,
+        joining: false,
+        travel: false,
+      },
+    });
 
-      await fetchVisitors();
+    // Close modal immediately
+    setShowAddModal(false);
 
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
-  };
+    // Refresh visitors without making the modal wait
+    void fetchVisitors();
+
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};
 
   const handleEditVisitor = async (data: VisitorFormData) => {
     if (!editingVisitor) return;
